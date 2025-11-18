@@ -1,7 +1,7 @@
 from fastapi import HTTPException, Header, Depends
 from jose import jwt, JWTError
-from backend.config import JWT_SECRET, JWT_ALGORITHM
-from backend.database import db
+from config import JWT_SECRET, JWT_ALGORITHM
+from database import db
 from bson import ObjectId
 
 users_collection = db["utenti"]

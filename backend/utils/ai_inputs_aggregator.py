@@ -4,10 +4,10 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 import math
 
-from backend.utils.nasa_power_service import get_daily_point, compute_et0_hargreaves
-from backend.utils.weather_service import get_weather as get_openmeteo
-from backend.utils.copernicus_soil_service import get_soil_moisture
-from backend.utils.fao_profile_service import get_profile
+from utils.nasa_power_service import get_daily_point, compute_et0_hargreaves
+from utils.weather_service import get_weather as get_openmeteo
+from utils.copernicus_soil_service import get_soil_moisture
+from utils.fao_profile_service import get_profile
 
 _AGG_CACHE: Dict[str, Dict[str, Any]] = {}
 _AGG_TTL = int(os.getenv("AI_AGGR_TTL_SECONDS", "900"))  # 15 min

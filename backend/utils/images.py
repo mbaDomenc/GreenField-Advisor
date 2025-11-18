@@ -1,10 +1,10 @@
 from pathlib import Path
 from uuid import uuid4
 from io import BytesIO
-from typing import Dict
+from typing import Dict, Optional
 from PIL import Image, ImageOps
 
-from backend.config import settings
+from config import settings
 
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP", "JPG"}
 
@@ -27,7 +27,7 @@ def _resize_max(img: Image.Image, max_side: int) -> Image.Image:
 def save_image_bytes(
     data: bytes,
     subdir: str,
-    base_name: str | None = None,
+    base_name: Optional[str] = None,
     max_side: int = 1280,
     thumb_side: int = 384,
     webp_quality: int = 82
