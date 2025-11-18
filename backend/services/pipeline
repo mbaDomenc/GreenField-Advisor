@@ -1,0 +1,240 @@
+import abc
+from typing import Dict, Any, List, Optional
+from datetime import datetime
+
+# Importiamo il tuo servizio di logica esistente per usarlo come Strategia
+from utils.ai_irrigation_service import compute as compute_fuzzy
+
+# --- 1. CONTEXT OBJECT ---
+class GardenContext:
+    """
+    Il contesto che viaggia attraverso la pipeline.
+    Trasporta i dati grezzi (Pianta, Meteo/NASA, Sensori Locali) e
+    raccoglie i risultati elaborati passo dopo passo.
+    """
+    def __init__(self, plant: Dict[str, Any], aggregated_inputs: Dict[str, Any], local_sensor: Dict[str, Any]):
+        # Input
+        self.plant = plant
+        self.inputs = aggregated_inputs  # Output di ai_inputs_aggregator (Meteo, NASA, ecc.)
+        self.sensor = local_sensor       # Sensore fisico locale (se esiste)
+        
+        # Output progressivi della pipeline
+        self.features: Dict[str, Any] = {}
+        self.estimation: Dict[str, Any] = {}  # Risultato della Strategy
+        self.anomalies: List[str] = []        # Lista di warning/errori
+        self.suggestion: str = ""             # Messaggio finale per l'utente
+        
+        self.is_valid = True  # Flag per interrompere la catena in caso di dati corrotti
+
+# --- 2. STRATEGY PATTERN (L'Estimator) ---
+class IrrigationStrategy(abc.ABC):
+    @abc.abstractmethod
+    def evaluate(self, context: GardenContext) -> Dict[str, Any]:
+        pass
+
+class FuzzyLogicStrategy(IrrigationStrategy):
+    """
+    Usa la tua logica Fuzzy esistente (ai_irrigation_service.py).
+    Integra il sensore locale sovrascrivendo i dati satellitari se disponibili.
+    """
+    def evaluate(self, context: GardenContext) -> Dict[str, Any]:
+        # Estraiamo il weather dal contesto aggregato
+        weather_data = context.inputs.get("weather", {}) or {}
+        
+        # INTEGRAZIONE SENSORE LOCALE:
+        # Se c'è un sensore locale affidabile, usiamo quello invece della stima satellitare
+        if context.sensor and context.sensor.get("value") is not None:
+            # Copia per non modificare l'originale
+            weather_data = weather_data.copy()
+            local_val = float(context.sensor["value"])
+            # Sovrascriviamo i campi usati dal motore fuzzy
+            weather_data["soilMoisture0to7cm"] = local_val
+            weather_data["soilMoistureApprox"] = local_val
+
+        # Chiamata al tuo servizio esistente
+        return compute_fuzzy(
+            plant=context.plant,
+            weather=weather_data,
+            now=datetime.utcnow()
+        )
+
+class SimpleThresholdStrategy(IrrigationStrategy):
+    """
+    Strategia di fallback semplice (Rule Engine) se il servizio Fuzzy fallisce.
+    """
+    def evaluate(self, context: GardenContext) -> Dict[str, Any]:
+        # Recupera umidità (locale o stimata)
+        moisture = 0
+        if context.sensor:
+            moisture = context.sensor.get("value", 0)
+        elif context.inputs.get("weather"):
+            moisture = context.inputs["weather"].get("soilMoistureApprox", 0) or 0
+            
+        # Logica a soglia semplice
+        if moisture < 30:
+            return {
+                "recommendation": "irrigate_today",
+                "reason": "Terreno secco (Soglia fissa < 30%)",
+                "confidence": 1.0
+            }
+        return {
+            "recommendation": "skip",
+            "reason": "Umidità sufficiente",
+            "confidence": 1.0
+        }
+
+# --- 3. CHAIN OF RESPONSIBILITY (Framework) ---
+class PipelineStep(abc.ABC):
+    def __init__(self):
+        self._next: Optional['PipelineStep'] = None
+
+    def set_next(self, step: 'PipelineStep') -> 'PipelineStep':
+        self._next = step
+        return step
+
+    def handle(self, context: GardenContext):
+        self.process(context)
+        # Passa al prossimo solo se i dati sono validi
+        if context.is_valid and self._next:
+            self._next.handle(context)
+
+    @abc.abstractmethod
+    def process(self, context: GardenContext):
+        pass
+
+# --- IMPLEMENTAZIONE DEGLI STEP (La tua richiesta) ---
+
+# STEP 1: Data Validator / Cleaner
+class DataValidator(PipelineStep):
+    def process(self, context: GardenContext):
+        # Verifica esistenza dati pianta
+        if not context.plant:
+            context.anomalies.append("Dati pianta mancanti.")
+            context.is_valid = False
+            return
+
+        # Verifica dati aggregati (Meteo/NASA)
+        if not context.inputs or not context.inputs.get("weather"):
+            context.anomalies.append("Dati meteo esterni non disponibili.")
+            # Non invalidiamo is_valid, proviamo a procedere con i sensori locali
+
+        # Cleaner/Validator Sensore Locale
+        if context.sensor:
+            val = context.sensor.get("value")
+            # Pulizia: se è fuori scala (es. -5 o 150), lo scartiamo
+            if val is not None and not (0 <= float(val) <= 100):
+                context.anomalies.append(f"Sensore locale fuori range ({val}), ignorato.")
+                context.sensor = None # Lo rimuoviamo dal contesto per non inquinare i calcoli
+
+# STEP 2: Feature Engineering
+class FeatureEngineering(PipelineStep):
+    def process(self, context: GardenContext):
+        wx = context.inputs.get("weather", {}) or {}
+        
+        # Feature 1: Rischio Pioggia Forte
+        rain = wx.get("rainNext24h", 0) or 0
+        context.features["heavy_rain_coming"] = rain > 10.0
+        
+        # Feature 2: Ondata di Calore
+        temp = wx.get("temp", 20) or 20
+        context.features["heat_wave"] = temp > 30.0
+        
+        # Feature 3: Discrepanza Sensori (Locale vs Satellite)
+        # Utile per capire se il sensore è rotto o se il microclima è diverso
+        if context.sensor and wx.get("soilMoisture0to7cm"):
+            local = float(context.sensor["value"])
+            sat = float(wx["soilMoisture0to7cm"])
+            if abs(local - sat) > 35: # Se differiscono di oltre il 35%
+                context.features["sensor_discrepancy"] = True
+                context.anomalies.append(f"Discrepanza Dati: Locale={local}% vs Satellite={sat}%")
+
+# STEP 3: Estimator / Rule Engine (Usa la Strategy)
+class EstimatorStep(PipelineStep):
+    def __init__(self, strategy: IrrigationStrategy):
+        super().__init__()
+        self.strategy = strategy
+
+    def process(self, context: GardenContext):
+        try:
+            # Delega il calcolo alla strategia iniettata
+            context.estimation = self.strategy.evaluate(context)
+        except Exception as e:
+            context.anomalies.append(f"Errore nel calcolo stima: {str(e)}")
+            # Fallback di sicurezza
+            context.estimation = {
+                "recommendation": "skip",
+                "reason": "Errore interno sistema",
+                "confidence": 0.0
+            }
+
+# STEP 4: Anomaly Detector
+class AnomalyDetector(PipelineStep):
+    def process(self, context: GardenContext):
+        action = context.estimation.get("recommendation")
+        
+        # Anomalia Logica 1: Il sistema dice "Annaffia", ma sta arrivando un temporale
+        if action in ["irrigate_today", "irrigate_tomorrow"] and context.features.get("heavy_rain_coming"):
+            context.anomalies.append("CONFLITTO: Irrigazione richiesta ma prevista forte pioggia.")
+            # Override: Blocchiamo l'azione per risparmiare acqua
+            context.estimation["recommendation"] = "skip"
+            context.estimation["reason"] = "Irrigazione sospesa per pioggia imminente."
+
+        # Anomalia Logica 2: Il sistema dice "Annaffia", ma il sensore locale dice "Zuppo" (>85%)
+        if context.sensor:
+            val = float(context.sensor.get("value", 0))
+            if action == "irrigate_today" and val > 85:
+                context.anomalies.append("CONFLITTO: Logica richiede acqua ma sensore indica terreno saturo.")
+                context.estimation["recommendation"] = "skip"
+                context.estimation["reason"] = "Terreno già molto umido (rilevazione sensore)."
+
+# STEP 5: Action Suggestion Generator
+class ActionGenerator(PipelineStep):
+    def process(self, context: GardenContext):
+        rec = context.estimation.get("recommendation")
+        reason = context.estimation.get("reason", "")
+        
+        # Generazione quantità stimata (Richiesta specifica)
+        amount_ml = 0
+        if rec in ["irrigate_today", "irrigate_tomorrow"]:
+            # Base 500ml, aumenta se fa caldo
+            amount_ml = 750 if context.features.get("heat_wave") else 400
+        
+        # Costruzione Messaggio Umano
+        if rec == "irrigate_today":
+            msg = f"Annaffiare oggi. Quantità stimata: {amount_ml}ml."
+        elif rec == "irrigate_tomorrow":
+            msg = f"Programmare irrigazione per domani ({amount_ml}ml)."
+        else:
+            msg = "Nessuna azione richiesta al momento."
+
+        # Aggiunta contesto caldo
+        if context.features.get("heat_wave") and rec != "skip":
+            msg += " (Aumentato per ondata di calore)."
+
+        # Aggiunta avvisi anomalie
+        if context.anomalies:
+            unique_anomalies = list(set(context.anomalies)) # Rimuovi duplicati
+            msg += f" [Note: {'; '.join(unique_anomalies)}]"
+            
+        context.suggestion = msg
+        # Salviamo la quantità calcolata nell'estimation per uso futuro
+        context.estimation["estimated_amount_ml"] = amount_ml
+
+# --- SERVICE FACADE ---
+class GardeningPipelineService:
+    def __init__(self):
+        # Configurazione Strategy (Default: Fuzzy Logic)
+        self.strategy = FuzzyLogicStrategy()
+        
+        # Costruzione Catena
+        self.chain = DataValidator()
+        self.chain.set_next(FeatureEngineering())\
+                  .set_next(EstimatorStep(self.strategy))\
+                  .set_next(AnomalyDetector())\
+                  .set_next(ActionGenerator())
+
+    def run(self, plant: dict, aggregated_inputs: dict, local_sensor: dict) -> Dict[str, Any]:
+        # Creazione contesto ed esecuzione
+        ctx = GardenContext(plant, aggregated_inputs, local_sensor)
+        self.chain.handle(ctx)
+        return ctx
