@@ -1,14 +1,16 @@
 # backend/routes/plantsRouter.py
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List
-from pydantic import BaseModel, Field  # <-- IMPORT NECESSARIO
+from pydantic import BaseModel, Field
 
 from utils.auth import get_current_user
 from models.plantModel import PlantCreate, PlantUpdate, PlantOut
 from controllers.plantsController import (
     list_plants, get_plant, create_plant, update_plant, delete_plant,
     save_plant_image, remove_plant_image,
+    calculate_irrigation_for_plant  #NUOVA FUNZIONE IMPORTATA
 )
+# Nota: Puoi rimuovere l'import di compute_for_plant se non lo usi più altrove
 from controllers.ai_irrigazione_controller import compute_for_plant, compute_batch
 
 from database import db
@@ -79,18 +81,20 @@ def api_delete_plant_image(plant_id: str, current_user: dict = Depends(get_curre
 # ======== AI IRRIGAZIONE ========
 
 class AIPlantBatchIn(BaseModel):
-    plantIds: List[str] = Field(default_factory=list)  # <-- Pydantic v2 safe default
+    plantIds: List[str] = Field(default_factory=list)
 
 
-@router.post("/{plant_id}/ai/irrigazione")
-def api_ai_irrigazione_per_pianta(
+# ENDPOINT AGGIORNATO PER USARE LA NUOVA PIPELINE
+@router.post("/{plant_id}/ai/irrigazione", summary="Analisi AI Irrigazione/Concimazione")
+async def api_ai_irrigazione_per_pianta(
     plant_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    doc = get_plant(current_user["id"], plant_id)
-    if not doc:
-        raise HTTPException(status_code=404, detail="Pianta non trovata")
-    return compute_for_plant(doc)
+    """
+    Esegue la pipeline AI v2 (Meteo Reale + Suolo + Concimazione).
+    """
+    # Chiama la nuova funzione asincrona nel controller
+    return await calculate_irrigation_for_plant(current_user["id"], plant_id)
 
 
 @router.post("/ai/irrigazione/batch")
@@ -98,4 +102,6 @@ def api_ai_irrigazione_batch(
     payload: AIPlantBatchIn,
     current_user: dict = Depends(get_current_user)
 ):
+    # Questo rimane collegato al vecchio controller batch per ora, 
+    # a meno che tu non voglia aggiornare anche questo.
     return compute_batch(payload.plantIds, current_user)
