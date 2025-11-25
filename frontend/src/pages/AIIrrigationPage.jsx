@@ -55,12 +55,10 @@ const AIIrrigationPage = ({ onBack }) => {
   };
 
   const handleLogIrrigation = (plant) => {
-    // non tocchiamo Interventions: apri la tua modal già esistente
     alert(`Registra irrigazione per ${plant.name} (TODO: apri modal interventi)`);
   };
 
   const refreshWeather = (plant) => {
-    // per ora ri-usa lo stesso endpoint della AI: aggiorna anche il meteo
     askForAdvice(plant);
   };
 
@@ -102,10 +100,7 @@ const AIIrrigationPage = ({ onBack }) => {
         <div className="mb-8">
           <div className="flex items-center space-x-4 mb-6">
             {onBack && (
-              <button
-                onClick={onBack}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
+              <button onClick={onBack} className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
                 <ArrowLeft className="h-5 w-5" />
                 <span>Indietro</span>
               </button>
@@ -115,11 +110,12 @@ const AIIrrigationPage = ({ onBack }) => {
                 <Brain className="h-8 w-8 text-white" />
               </div>
               <div>
+                {/* 🟢 TITOLO AGGIORNATO */}
                 <h1 className="text-3xl font-bold text-gray-900">
-                  AI Tools → Previsione Irrigazione
+                  AI Tools → Assistente Coltivazione
                 </h1>
                 <p className="text-gray-600">
-                  Consigli personalizzati basati su meteo e caratteristiche della pianta
+                  Analisi completa: Irrigazione, Concimazione, Fabbisogno del suolo e Salute della pianta.
                 </p>
               </div>
             </div>
@@ -137,20 +133,15 @@ const AIIrrigationPage = ({ onBack }) => {
                 Nessuna pianta disponibile
               </h3>
               <p className="text-gray-600 mb-6">
-                Aggiungi delle piante per ottenere consigli AI sull'irrigazione
+                Aggiungi delle piante per ottenere consigli AI personalizzati.
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             {plants.map((plant) => {
-              const img =
-                plant.imageUrl ||
-                plant.trefleImageUrl ||
-                getPlaceholderImage(plant);
-
+              const img = plant.imageUrl || plant.trefleImageUrl || getPlaceholderImage(plant);
               const rec = recommendations[plant.id];
-              // Il backend mette il meteo in _debug.weather
               const weather = rec?._debug?.weather || rec?.weather || null;
 
               return (
@@ -161,7 +152,7 @@ const AIIrrigationPage = ({ onBack }) => {
                   loadingExternal={loadingPlants.has(plant.id)}
                   recommendation={recommendations[plant.id]}
                   onAskAdvice={() => askForAdvice(plant)}
-                  onRefreshWeather={() => refreshWeather(plant)}   // <-- qui
+                  onRefreshWeather={() => refreshWeather(plant)}
                   onLogIrrigation={() => handleLogIrrigation(plant)}
                   weather={weather}
                 />
@@ -174,23 +165,23 @@ const AIIrrigationPage = ({ onBack }) => {
         <div className="mt-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-8 text-center">
           <Brain className="h-12 w-12 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-4">
-            Irrigazione Intelligente con AI
+            Assistente Virtuale Completo
           </h2>
           <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-            Analizziamo meteo e storico per suggerire quando irrigare, ridurre sprechi e migliorare la salute delle piante.
+            Il nostro sistema analizza il meteo in tempo reale, il tipo di terreno e le necessità specifiche della specie per ottimizzare ogni aspetto della cura.
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5" />
-              <span>Consigli spiegabili</span>
+              <span>Irrigazione Intelligente</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5" />
-              <span>Basati su meteo reale</span>
+              <span>Piani Concimazione</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5" />
-              <span>Zero dispositivi obbligatori</span>
+              <span>Diagnosi Salute (Visione)</span>
             </div>
           </div>
         </div>

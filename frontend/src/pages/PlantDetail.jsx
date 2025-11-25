@@ -10,6 +10,7 @@ import {
   Camera,
   Trash2,
   Pencil,
+  FlaskConical 
 } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 import PlantFormModal from '../components/PlantFormModal';
@@ -63,7 +64,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
   const asISO = (val) => {
     if (!val) return null;
     try {
-      // Se è già ISO o un valore parseable, ritorna ISO
       const d = new Date(val);
       if (isNaN(d.getTime())) return null;
       return d.toISOString();
@@ -125,26 +125,11 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
       case 'irrigazione':
         return <Droplets className="h-4 w-4 text-blue-600" />;
       case 'concimazione':
-        return <Leaf className="h-4 w-4 text-green-600" />;
+        return <FlaskConical className="h-4 w-4 text-amber-600" />;
       case 'potatura':
         return <Edit className="h-4 w-4 text-orange-600" />;
       default:
         return <Calendar className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const getStageColor = (stage) => {
-    switch (stage) {
-      case 'semina':
-        return 'bg-amber-100 text-amber-800';
-      case 'crescita':
-        return 'bg-blue-100 text-blue-800';
-      case 'fioritura':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'raccolta':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -165,8 +150,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     );
   };
 
-  //Upload Immagine
-
+  // Upload Immagine
   const onClickChangePhoto = () => fileRef.current?.click();
 
   const onFileSelected = async (e) => {
@@ -215,8 +199,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     }
   };
 
-  //Loaders
-
+  // Loaders
   const fetchPlant = async () => {
     const { data } = await api.get(`/api/piante/${plantId}`);
     setPlant(data);
@@ -262,9 +245,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
   }, [plantId]);
 
   // Modifica / Elimina Pianta
-
-  const handleEdit = () => setModalOpen(true);
-
   const handleFormSubmit = async (formData) => {
     try {
       const { data: updated } = await api.patch(`/api/piante/${plantId}`, formData);
@@ -287,7 +267,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     }
   };
 
-  //HANDLERS Interventi
+  // HANDLERS Interventi
 
   const handleAddIrrigation = async () => {
     const litersNum = Number(irrigForm.liters);
@@ -358,8 +338,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     }
   };
 
-  //Views
-
+  // Views
   if (loading) {
     return (
       <div className="min-h-screen bg-green-50 pt-16">
@@ -380,7 +359,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
             <p className="text-red-600">{error || 'Pianta non trovata'}</p>
             <button
               onClick={onBack}
-              className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               Torna alla lista
             </button>
@@ -427,13 +406,14 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                   <h1 className="text-2xl font-bold text-gray-900 truncate">
                     {plant.name || 'Senza nome'}
                   </h1>
-                  <span
+                  {/* ❌ RIMOSSO: Badge fase accanto al nome */}
+                  {/* <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${getStageColor(
                       plant.stage
                     )}`}
                   >
                     {plant.stage || 'Non specificato'}
-                  </span>
+                  </span> */}
                 </div>
                 <p className="text-green-800/80 italic mt-0.5 truncate">
                   {plant.species || 'Specie non indicata'}
@@ -519,9 +499,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                     <Droplets className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-600">Intervallo irrigazione</p>
-                      <p className="font-semibold">
-                        {plant.wateringIntervalDays} giorni
-                      </p>
+                      <p className="font-semibold">{plant.wateringIntervalDays} giorni</p>
                     </div>
                   </div>
 
@@ -529,9 +507,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                     <Clock className="h-5 w-5 text-gray-600" />
                     <div>
                       <p className="text-sm text-gray-600">Ultima irrigazione</p>
-                      <p className="font-semibold">
-                        {formatDate(plant.lastWateredAt)}
-                      </p>
+                      <p className="font-semibold">{formatDate(plant.lastWateredAt)}</p>
                     </div>
                   </div>
                 </div>
@@ -627,8 +603,8 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                   <p className="text-sm text-gray-600">Data creazione</p>
                   <p className="font-semibold">{formatDate(plant.createdAt)}</p>
                 </div>
-
-                <div>
+                {/* ❌ RIMOSSO: Blocco 'Fase' */}
+                {/* <div>
                   <p className="text-sm text-gray-600">Fase attuale</p>
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStageColor(
@@ -637,7 +613,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                   >
                     {plant.stage || 'Non specificato'}
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -660,9 +636,9 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                   onClick={() => setShowFertModal(true)}
                   className="w-full flex items-center space-x-3 p-3 border border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors"
                 >
-                  <Leaf className="h-5 w-5 text-green-600" />
+                  <FlaskConical className="h-5 w-5 text-amber-600" />
                   <span className="text-sm font-medium text-gray-700">
-                    Aggiungi Concimazione
+                    Registra Concimazione
                   </span>
                 </button>
 

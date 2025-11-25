@@ -1,183 +1,86 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Lock, Leaf, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Sprout, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { setAccessToken, setUser } = useAuth(); // dal tuo AuthContext
-
-  const [formData, setFormData] = useState({
-    identifier: '', // email o username
-    password: ''
-  });
-
+  const { setAccessToken, setUser } = useAuth();
+  const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
+    setError('');
     setLoading(true);
-
     try {
-      // Decidi dinamicamente se inviare email o username
-      const payload = {
-        password: formData.password
-      };
-      if (formData.identifier.includes('@')) {
-        payload.email = formData.identifier.trim();
-      } else {
-        payload.username = formData.identifier.trim();
-      }
-
+      const payload = { password: formData.password };
+      if (formData.identifier.includes('@')) payload.email = formData.identifier;
+      else payload.username = formData.identifier;
+      
       const res = await api.post('/api/utenti/login', payload);
-      const token = res.data?.accessToken;
-
-      if (!token) throw new Error('Token mancante nella risposta');
-
-      // Salva nel context (così axiosInstance lo userà automaticamente)
-      setAccessToken(token);
-      setUser(res.data?.utente || null);
-
-      // Vai alla home (o dashboard)
+      setAccessToken(res.data?.accessToken);
+      setUser(res.data?.utente);
       navigate('/', { replace: true });
     } catch (err) {
-      const detail =
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        'Errore di login';
-      setErrorMsg(detail);
+      setError(err?.response?.data?.detail || 'Credenziali non valide');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-green-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center relative py-10 px-4 overflow-hidden">
+       {/* Sfondo decorativo */}
+       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 -z-20"></div>
+       <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-200/30 rounded-full blur-[100px] -z-10"></div>
 
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="bg-green-600 p-4 rounded-full">
-              <Leaf className="h-12 w-12 text-white" />
-            </div>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Accedi al tuo account
-          </h2>
-          <p className="text-gray-600">
-            Bentornato! Accedi per continuare a coltivare il tuo giardino.
-          </p>
-        </div>
+       <div className="w-full max-w-md relative z-10">
+         <div className="text-center mb-10">
+             <div className="inline-flex bg-gradient-to-br from-emerald-500 to-teal-500 p-5 rounded-3xl shadow-xl mb-6 transform rotate-6">
+                 <Sprout className="h-10 w-10 text-white" />
+             </div>
+             <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Bentornato!</h2>
+         </div>
 
-        {/* Login Form */}
-        <div className="bg-white p-8 rounded-xl shadow-lg">
-          {errorMsg && (
-            <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-red-700 text-sm">
-              {errorMsg}
-            </div>
-          )}
+         <div className="glass bg-white/70 p-10 rounded-[2.5rem] shadow-2xl shadow-emerald-900/10 border border-white">
+            {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold text-center border border-red-100">{error}</div>}
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-600 ml-1">Email o Username</label>
+                    <div className="relative">
+                        <User className="absolute left-5 top-4 h-5 w-5 text-gray-400" />
+                        <input type="text" className="w-full pl-12 pr-5 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 transition-all font-medium text-gray-800" placeholder="tu@esempio.com" value={formData.identifier} onChange={e => setFormData({...formData, identifier: e.target.value})} required />
+                    </div>
+                </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email o Username */}
-            <div>
-              <label htmlFor="identifier" className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                <User className="h-4 w-4" />
-                <span>Email o Username</span>
-              </label>
-              <input
-                type="text"
-                id="identifier"
-                name="identifier"
-                value={formData.identifier}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
-                placeholder="Inserisci email o username"
-              />
-            </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-600 ml-1">Password</label>
+                    <div className="relative">
+                        <Lock className="absolute left-5 top-4 h-5 w-5 text-gray-400" />
+                        <input type={showPw ? "text" : "password"} className="w-full pl-12 pr-12 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 transition-all font-medium text-gray-800" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                        <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-5 top-4 text-gray-400 hover:text-emerald-600 transition-colors">
+                            {showPw ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5"/>}
+                        </button>
+                    </div>
+                </div>
 
-            {/* Password con toggle visibilità */}
-            <div>
-              <label htmlFor="password" className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                <Lock className="h-4 w-4" />
-                <span>Password</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  maxLength={72}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors pr-10"
-                  placeholder="La tua password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(prev => !prev)}
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                <div className="flex justify-end">
+                    <Link to="/forgot-password" class="text-sm font-bold text-emerald-600 hover:text-emerald-800 transition-colors">Password dimenticata?</Link>
+                </div>
+
+                <button type="submit" disabled={loading} className="btn-bouncy w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 text-lg">
+                    {loading ? "Accesso..." : <>Accedi <ArrowRight className="h-5 w-5" /></>}
                 </button>
-              </div>
-            </div>
-
-            {/* Ricordami e link */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Ricordami
-                </label>
-              </div>
-              <Link to="/forgot-password" className="text-sm text-green-600 hover:text-green-500">
-                Password dimenticata?
-              </Link>
-            </div>
-
-            {/* Pulsante Login */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full ${loading ? 'bg-green-400' : 'bg-green-600 hover:bg-green-700'} text-white py-3 px-6 rounded-lg transition-colors font-medium`}
-            >
-              {loading ? 'Accesso in corso...' : 'Accedi'}
-            </button>
-          </form>
-
-          {/* Link Registrazione */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Non hai un account?{' '}
-              <Link to="/register" className="text-green-600 hover:text-green-500 font-medium">
-                Registrati qui
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
+            </form>
+         </div>
+         <p className="text-center mt-8 text-gray-600 font-medium">Non hai un account? <Link to="/register" className="text-emerald-700 font-bold hover:underline">Registrati</Link></p>
+       </div>
     </div>
   );
 };
-
 export default LoginPage;
