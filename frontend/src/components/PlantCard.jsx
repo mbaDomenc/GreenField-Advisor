@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Trash, Info, MapPin, Leaf, Check, X } from 'lucide-react';
+import { Pencil, Trash, MapPin, Leaf, Check, X } from 'lucide-react';
 
 const PlantCard = ({ plant, onOpenDetail, onInlineSave, onDelete }) => {
   const [editingField, setEditingField] = useState(null);
@@ -94,163 +94,148 @@ const PlantCard = ({ plant, onOpenDetail, onInlineSave, onDelete }) => {
 
       {/* Contenuto */}
       <div className="p-6">
+        
         {/* Nome (inline edit) */}
-<div className="mb-3">
-  {editingField === 'name' ? (
-    <div
-      className="flex items-center gap-2"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <input
-        type="text"
-        value={editValues.name}
-        onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
-        className="min-w-0 flex-1 text-xl font-bold text-gray-900 border-b-2 border-green-500 focus:outline-none bg-transparent"
-        autoFocus
-      />
-      <button
-        onClick={(e) => handleEditSave('name', e)}
-        className="shrink-0 text-green-600 hover:text-green-700"
-        title="Salva"
-      >
-        <Check className="h-5 w-5" />
-      </button>
-      <button
-        onClick={handleEditCancel}
-        className="shrink-0 text-red-600 hover:text-red-700"
-        title="Annulla"
-      >
-        <X className="h-5 w-5" />
-      </button>
-    </div>
-  ) : (
-    <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-700 transition-colors">
-      {plant?.name}
-    </h3>
-  )}
-</div>
+        <div className="mb-3">
+          {editingField === 'name' ? (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <input
+                type="text"
+                value={editValues.name}
+                onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+                className="min-w-0 flex-1 text-xl font-bold text-gray-900 border-b-2 border-green-500 focus:outline-none bg-transparent"
+                autoFocus
+              />
+              <button
+                onClick={(e) => handleEditSave('name', e)}
+                className="shrink-0 text-green-600 hover:text-green-700"
+                title="Salva"
+              >
+                <Check className="h-5 w-5" />
+              </button>
+              <button
+                onClick={handleEditCancel}
+                className="shrink-0 text-red-600 hover:text-red-700"
+                title="Annulla"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-700 transition-colors">
+              {plant?.name}
+            </h3>
+          )}
+        </div>
 
-
-        {/* Specie */}
-        <p className="text-gray-600 mb-3 italic">{plant?.species}</p>
+        {/* Specie & Terreno */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+             <p className="text-gray-600 italic">{plant?.species}</p>
+             
+             {/* 🟢 NUOVO: Mostra il terreno invece della fase */}
+             {plant?.soil && (
+                 <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full border border-amber-200">
+                    {plant.soil}
+                 </span>
+             )}
+        </div>
 
        {/* Location (inline edit) */}
-<div className="mb-3">
-  {editingField === 'location' ? (
-    <div
-      className="flex items-center gap-2"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <MapPin className="h-4 w-4 text-gray-500 shrink-0" />
-      <input
-        type="text"
-        value={editValues.location}
-        onChange={(e) => setEditValues({ ...editValues, location: e.target.value })}
-        className="min-w-0 flex-1 text-sm text-gray-600 border-b border-green-500 focus:outline-none bg-transparent"
-        placeholder="Aggiungi posizione..."
-        autoFocus
-      />
-      <button
-        onClick={(e) => handleEditSave('location', e)}
-        className="shrink-0 text-green-600 hover:text-green-700"
-        title="Salva"
-      >
-        <Check className="h-4 w-4" />
-      </button>
-      <button
-        onClick={handleEditCancel}
-        className="shrink-0 text-red-600 hover:text-red-700"
-        title="Annulla"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  ) : (
-    <div
-      className="flex items-center gap-2 cursor-pointer hover:text-green-600 transition-colors"
-      onClick={(e) => handleEditStart('location', e)}
-    >
-      <MapPin className="h-4 w-4 text-gray-500 shrink-0" />
-      <span className="truncate text-sm text-gray-600">
-        {plant?.location || 'Aggiungi posizione...'}
-      </span>
-    </div>
-  )}
-</div>
-
-        {/* Descrizione (inline edit) */}
-<div className="mb-4">
-  {editingField === 'description' ? (
-    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-start gap-2">
-        <textarea
-          value={editValues.description}
-          onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
-          className="min-w-0 flex-1 text-sm text-gray-600 border border-green-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-          placeholder="Aggiungi descrizione..."
-          rows="2"
-          autoFocus
-        />
-        <div className="flex flex-col gap-2 shrink-0">
-          <button
-            onClick={(e) => handleEditSave('description', e)}
-            className="text-green-600 hover:text-green-700"
-            title="Salva"
-          >
-            <Check className="h-4 w-4" />
-          </button>
-          <button
-            onClick={handleEditCancel}
-            className="text-red-600 hover:text-red-700"
-            title="Annulla"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  ) : (
-    <p
-      className="text-sm text-gray-600 cursor-pointer hover:text-green-600 transition-colors line-clamp-2"
-      onClick={(e) => handleEditStart('description', e)}
-    >
-      {plant?.description || 'Aggiungi descrizione...'}
-    </p>
-  )}
-</div>
-
-        {/* Info aggiuntive */}
-        <div className="space-y-2 text-xs text-gray-500">
-          <div className="flex justify-between">
-            <span>Creata il:</span>
-            <span>{formatDate(plant?.createdAt)}</span>
-          </div>
-          {plant?.stage && (
-            <div className="flex justify-between">
-              <span>Fase:</span>
-              <span className="capitalize">{plant.stage}</span>
+        <div className="mb-3">
+          {editingField === 'location' ? (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MapPin className="h-4 w-4 text-gray-500 shrink-0" />
+              <input
+                type="text"
+                value={editValues.location}
+                onChange={(e) => setEditValues({ ...editValues, location: e.target.value })}
+                className="min-w-0 flex-1 text-sm text-gray-600 border-b border-green-500 focus:outline-none bg-transparent"
+                placeholder="Aggiungi posizione..."
+                autoFocus
+              />
+              <button
+                onClick={(e) => handleEditSave('location', e)}
+                className="shrink-0 text-green-600 hover:text-green-700"
+                title="Salva"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleEditCancel}
+                className="shrink-0 text-red-600 hover:text-red-700"
+                title="Annulla"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-2 cursor-pointer hover:text-green-600 transition-colors"
+              onClick={(e) => handleEditStart('location', e)}
+            >
+              <MapPin className="h-4 w-4 text-gray-500 shrink-0" />
+              <span className="truncate text-sm text-gray-600">
+                {plant?.location || 'Aggiungi posizione...'}
+              </span>
             </div>
           )}
         </div>
 
-        {/* Badge stato */}
-        <div className="mt-4 flex justify-between items-center">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-medium ${
-              plant?.stage === 'fioritura'
-                ? 'bg-yellow-100 text-yellow-800'
-                : plant?.stage === 'raccolta'
-                ? 'bg-green-100 text-green-800'
-                : plant?.stage === 'crescita'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {plant?.stage || 'Non specificato'}
-          </span>
-
-
+        {/* Descrizione (inline edit) */}
+        <div className="mb-4">
+          {editingField === 'description' ? (
+            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start gap-2">
+                <textarea
+                  value={editValues.description}
+                  onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
+                  className="min-w-0 flex-1 text-sm text-gray-600 border border-green-500 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  placeholder="Aggiungi descrizione..."
+                  rows="2"
+                  autoFocus
+                />
+                <div className="flex flex-col gap-2 shrink-0">
+                  <button
+                    onClick={(e) => handleEditSave('description', e)}
+                    className="text-green-600 hover:text-green-700"
+                    title="Salva"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={handleEditCancel}
+                    className="text-red-600 hover:text-red-700"
+                    title="Annulla"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p
+              className="text-sm text-gray-600 cursor-pointer hover:text-green-600 transition-colors line-clamp-2"
+              onClick={(e) => handleEditStart('description', e)}
+            >
+              {plant?.description || 'Aggiungi descrizione...'}
+            </p>
+          )}
         </div>
+
+        {/* Footer: Data creazione */}
+        <div className="space-y-2 text-xs text-gray-500 border-t border-gray-100 pt-3">
+          <div className="flex justify-between">
+            <span>Creata il:</span>
+            <span>{formatDate(plant?.createdAt)}</span>
+          </div>
+        </div>
+
       </div>
     </div>
   );

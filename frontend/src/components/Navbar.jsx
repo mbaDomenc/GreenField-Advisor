@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Leaf, User, UserPlus, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, X, Sprout, User, UserPlus, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Navbar({ overlay = false }) {
+export default function Navbar() {
     const [openMobile, setOpenMobile] = useState(false);
     const [openPiante, setOpenPiante] = useState(false);
     const [openAI, setOpenAI] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
 
     const mobileRef = useRef(null);
     const pianteRef = useRef(null);
@@ -14,67 +15,42 @@ export default function Navbar({ overlay = false }) {
 
     const navigate = useNavigate();
     const { isAuthenticated, user, logout } = useAuth();
-    // Variabili derivate dall'utente
     const avatarUrl = user?.avatarUrl ?? null;
-    const ruolo = user?.ruolo ?? 'utente';
+    const initials = (user?.username || user?.email || 'U').slice(0, 2).toUpperCase();
 
-    // Chiudi menu mobile e dropdown cliccando fuori o premendo Esc
     useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', onScroll);
+        
         const handleClickOutside = (event) => {
             if (mobileRef.current && !mobileRef.current.contains(event.target)) setOpenMobile(false);
             if (pianteRef.current && !pianteRef.current.contains(event.target)) setOpenPiante(false);
             if (aiRef.current && !aiRef.current.contains(event.target)) setOpenAI(false);
         };
-        const handleEsc = (event) => {
-            if (event.key === 'Escape') {
-                setOpenMobile(false);
-                setOpenPiante(false);
-                setOpenAI(false);
-            }
-        };
         document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleEsc);
+        
         return () => {
+            window.removeEventListener('scroll', onScroll);
             document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleEsc);
         };
     }, []);
 
-    // Classi base
-    const wrapperClass = overlay
-        ? 'absolute inset-x-0 top-0 z-50 bg-transparent'
-        : 'relative z-50 bg-[#155E3C] shadow-[0_1px_12px_rgba(0,0,0,0.15)]';
+    const navClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out px-4 md:px-8 ${
+        scrolled ? 'py-2' : 'py-5'
+    }`;
 
-    const linkBase = 'inline-flex items-center px-4 py-3 rounded-md text-lg font-medium transition-colors duration-150';
-    const linkIdle = 'text-white/85 hover:text-white hover:bg-white/10';
-    const linkActive = 'text-white bg-white/10';
-    const logoRing = overlay ? 'bg-white/20' : 'bg-white/15';
+    const glassContainer = `mx-auto max-w-7xl rounded-full glass shadow-xl/10 transition-all duration-500 flex items-center justify-between px-6 ${
+        scrolled ? 'h-16 bg-white/80' : 'h-20 bg-white/60'
+    }`;
 
-    // Dropdown (nuovo stile più coerente con navbar)
-    const dropPanel =
-        'absolute left-0 mt-2 min-w-[220px] rounded-lg bg-[#134e35]/95 text-white border border-white/10 shadow-xl backdrop-blur-sm p-2';
-    const dropItem =
-        'block w-full text-left rounded-md px-3 py-2 text-[15px] font-medium text-white/90 ' +
-        'hover:bg-emerald-600/30 hover:text-white transition-colors';
+    const linkBase = "relative font-medium text-gray-600 hover:text-emerald-600 transition-colors px-4 py-2 rounded-full hover:bg-emerald-50/80";
+    const linkActive = "text-emerald-700 bg-emerald-100/80 font-bold shadow-sm";
 
+    const btnPrimary = "btn-bouncy bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-2.5 rounded-full font-semibold shadow-lg shadow-emerald-200 flex items-center gap-2";
+    const btnGhost = "btn-bouncy border-2 border-emerald-100 text-emerald-700 px-6 py-2 rounded-full font-semibold hover:bg-white hover:border-emerald-200";
 
-    // Bottoni (guest)
-    const btnLogin =
-        'inline-flex items-center gap-3 rounded-lg border px-5 py-3 text-lg font-semibold ' +
-        (overlay ? 'border-white/70 text-white hover:bg-white/10' : 'border-white/60 text-white hover:bg-white/10');
-    const btnRegister =
-        'inline-flex items-center gap-3 rounded-lg px-5 py-3 text-lg font-semibold ' +
-        (overlay ? 'bg-white text-[#155E3C] hover:bg-emerald-50' : 'bg-white text-[#155E3C] hover:bg-emerald-50');
-
-    // Bottoni (logged)
-    const btnGhost = 'inline-flex items-center gap-3 rounded-lg border px-5 py-3 text-lg font-semibold border-white/60 text-white hover:bg-white/10';
-    const btnPrimary = 'inline-flex items-center gap-3 rounded-lg bg-white px-5 py-3 text-lg font-semibold text-[#155E3C] hover:bg-emerald-50';
-
-    const initials = (user?.username || user?.email || 'U')
-        .split(' ')
-        .map((p) => p[0]?.toUpperCase())
-        .join('')
-        .slice(0, 2);
+    const dropPanel = "absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-emerald-100 overflow-hidden p-2 animate-in fade-in slide-in-from-top-2 duration-200";
+    const dropItem = "block px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors";
 
     const handleLogout = async () => {
         await logout();
@@ -82,242 +58,110 @@ export default function Navbar({ overlay = false }) {
     };
 
     return (
-        <nav className={`${wrapperClass} border-b-2 border-emerald-800`}>
-            <div className="w-full px-0">
-                <div className="flex h-20 items-center">
-                    {/* Logo sinistra */}
-                    <Link to="/" className="flex items-center gap-3 pl-4">
-            <span className={`inline-flex h-12 w-12 items-center justify-center rounded-full ${logoRing}`}>
-              <Leaf className="h-7 w-7 text-emerald-200" />
-            </span>
-                        <span className="text-2xl font-semibold tracking-tight text-white">Home Gardening</span>
-                    </Link>
-
-                    {/* Nav centrale */}
-                    <div className="hidden md:flex items-center gap-12 ml-8">
-                        {!isAuthenticated ? (
-                            <>
-                                <NavLink to="/" end className={`${linkBase} ${linkIdle}`}>
-                                    Home
-                                </NavLink>
-                                <a href="/#funzionalita" className={`${linkBase} ${linkIdle}`}>
-                                    Funzionalità
-                                </a>
-
-                            </>
-                        ) : (
-                            <>
-                                <NavLink to="/dashboard" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkIdle}`}>
-                                    Dashboard
-                                </NavLink>
-
-                                {/* Dropdown Piante */}
-                                <div className="relative" ref={pianteRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setOpenPiante((v) => !v);
-                                            setOpenAI(false);
-                                        }}
-                                        className={`${linkBase} ${linkIdle} gap-2`}
-                                    >
-                                        Piante <ChevronDown className={`h-4 w-4 transition-transform ${openPiante ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {openPiante && (
-                                        <div className={dropPanel}>
-                                            <Link to="/piante" className={dropItem} onClick={() => setOpenPiante(false)}>
-                                                Le mie piante
-                                            </Link>
-
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Dropdown AI Tools */}
-                                <div className="relative" ref={aiRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setOpenAI((v) => !v);
-                                            setOpenPiante(false);
-                                        }}
-                                        className={`${linkBase} ${linkIdle} gap-2`}
-                                    >
-                                        AI Tools <ChevronDown className={`h-4 w-4 transition-transform ${openAI ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {openAI && (
-                                        <div className={dropPanel}>
-
-                                            <Link to="/ai/irrigazione" className={dropItem} onClick={() => setOpenAI(false)}>
-                                                Previsione irrigazione
-                                            </Link>
-
-                                            {/*Aggiungo un nuovo link per accedere rapidamente alla nuova pagina di test e log*/}
-                                            <Link to="/ai/pipeline-test" className={dropItem} onClick={() => setOpenAI(false)}>
-                                                Analisi Idoneità Ambientale
-                                            </Link> 
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
+        <nav className={navClasses}>
+            <div className={glassContainer}>
+                
+                <Link to="/" className="flex items-center gap-2.5 group">
+                    <div className="bg-gradient-to-br from-emerald-400 to-teal-500 p-2.5 rounded-xl shadow-lg group-hover:rotate-12 transition-transform duration-300">
+                        <Sprout className="h-6 w-6 text-white" />
                     </div>
+                    <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-teal-600 tracking-tight">
+                        Greenfield
+                    </span>
+                </Link>
 
-                    {/* Azioni destra */}
-                    <div className="hidden md:flex items-center gap-4 ml-auto pr-4">
-                        {!isAuthenticated ? (
-                            <>
-                                <Link to="/login" className={btnLogin}>
-                                    <User className="h-5 w-5" /> Accedi
-                                </Link>
-                                <Link to="/register" className={btnRegister}>
-                                    <UserPlus className="h-5 w-5" /> Registrati
-                                </Link>
-                            </>
-                        ) : (
-                            <>
-                                {/* Avatar utente (DESKTOP) */}
-                                <div className="hidden lg:flex items-center justify-center">
-                                    {avatarUrl ? (
-                                        <img
-                                            src={avatarUrl}
-                                            alt="Avatar"
-                                            className="h-10 w-10 rounded-full border-2 border-white object-cover"
-                                        />
-                                    ) : (
-                                        <div className="h-10 w-10 rounded-full bg-white/15 text-white font-semibold flex items-center justify-center">
-                                            {initials}
-                                        </div>
-                                    )}
-                                </div>
-                                <Link to="/profilo" className={btnGhost}>
-                                    Profilo
-                                </Link>
-                                <button onClick={handleLogout} className={btnPrimary}>
-                                    <LogOut className="h-5 w-5" /> Logout
+                <div className="hidden md:flex items-center gap-2">
+                    {!isAuthenticated ? (
+                        <>
+                            <NavLink to="/" end className={({isActive}) => `${linkBase} ${isActive ? linkActive : ''}`}>Home</NavLink>
+                            <a href="/#funzionalita" className={linkBase}>Funzionalità</a>
+                        </>
+                    ) : (
+                        <>
+                            <NavLink to="/dashboard" className={({isActive}) => `${linkBase} ${isActive ? linkActive : ''}`}>Dashboard</NavLink>
+                            
+                            <div className="relative" ref={pianteRef}>
+                                <button onClick={() => { setOpenPiante(!openPiante); setOpenAI(false); }} className={`${linkBase} flex items-center gap-1`}>
+                                    Piante <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openPiante ? 'rotate-180':''}`} />
                                 </button>
-                            </>
-                        )}
-                    </div>
+                                {openPiante && (
+                                    <div className={dropPanel}>
+                                        <div className="px-4 py-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">Il tuo giardino</div>
+                                        <Link to="/piante" className={dropItem} onClick={() => setOpenPiante(false)}>🌿 Le mie piante</Link>
+                                    </div>
+                                )}
+                            </div>
 
-                    {/* Bottone mobile */}
-                    <button
-                        className="md:hidden ml-auto mr-2 inline-flex items-center justify-center rounded-md p-3 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60"
-                        onClick={() => setOpenMobile((v) => !v)}
-                        aria-label="Open menu"
-                    >
-                        {openMobile ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
-                    </button>
+                            <div className="relative" ref={aiRef}>
+                                <button onClick={() => { setOpenAI(!openAI); setOpenPiante(false); }} className={`${linkBase} flex items-center gap-1`}>
+                                    AI Tools <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openAI ? 'rotate-180':''}`} />
+                                </button>
+                                {openAI && (
+                                    <div className={dropPanel}>
+                                        <div className="px-4 py-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">Strumenti Smart</div>
+                                        <Link to="/ai/irrigazione" className={dropItem} onClick={() => setOpenAI(false)}>🤖 Assistente Coltivazione</Link>
+                                        <Link to="/ai/pipeline-test" className={dropItem} onClick={() => setOpenAI(false)}>
+                                            🌿Analisi Idoneità Ambientale
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
-            </div>
 
-            {/* Mobile menu (invariato nella logica, leggero polish visivo) */}
-            {openMobile && (
-                <div ref={mobileRef} className="md:hidden border-t border-white/15 bg-[#165f3e]">
-                    <div className="px-4 py-4 space-y-2">
-                        {!isAuthenticated ? (
-                            <>
-                                <NavLink to="/" end onClick={() => setOpenMobile(false)} className="block rounded-md px-4 py-3 text-lg text-white/85 hover:bg-white/10">
-                                    Home
-                                </NavLink>
-                                <a href="/#funzionalita" className={`${linkBase} ${linkIdle}`}>
-                                    Funzionalità
-                                </a>
-
-                                <div className="mt-4 grid grid-cols-2 gap-3">
-                                    <Link to="/login" onClick={() => setOpenMobile(false)} className={btnLogin}>
-                                        <User className="h-5 w-5" /> Accedi
-                                    </Link>
-                                    <Link to="/register" onClick={() => setOpenMobile(false)} className={btnRegister}>
-                                        <UserPlus className="h-5 w-5" /> Registrati
-                                    </Link>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-
-                                {/* Header utente (MOBILE) */}
-                                <div className="flex items-center gap-3 px-4 py-3">
-                                    {avatarUrl ? (
-                                        <img
-                                            src={avatarUrl}
-                                            alt="Avatar"
-                                            className="h-10 w-10 rounded-full border border-white/40 object-cover"
-                                        />
-                                    ) : (
-                                        <div className="h-10 w-10 rounded-full bg-white/15 text-white font-semibold flex items-center justify-center">
-                                            {initials}
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col">
-    <span className="text-white font-medium leading-tight">
-      {user?.username || user?.email}
-    </span>
-                                        <span className="text-white/70 text-sm capitalize leading-tight">
-      {ruolo}
-    </span>
+                <div className="hidden md:flex items-center gap-4">
+                    {!isAuthenticated ? (
+                        <>
+                            <Link to="/login" className={btnGhost}>Accedi</Link>
+                            <Link to="/register" className={btnPrimary}>Inizia Ora</Link>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-3 pl-4 border-l border-emerald-100">
+                                <div className="h-10 w-10 rounded-full p-[2px] bg-gradient-to-tr from-emerald-400 to-teal-500 shadow-md">
+                                    <div className="h-full w-full rounded-full bg-white p-0.5 overflow-hidden">
+                                        {avatarUrl ? 
+                                            <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover rounded-full" /> : 
+                                            <div className="h-full w-full bg-emerald-50 flex items-center justify-center text-emerald-700 font-bold text-sm">{initials}</div>
+                                        }
                                     </div>
                                 </div>
-                                <NavLink to="/dashboard" onClick={() => setOpenMobile(false)} className="block rounded-md px-4 py-3 text-lg text-white/85 hover:bg-white/10">
-                                    Dashboard
-                                </NavLink>
-
-                                {/* Piante fisarmonica */}
-                                <div className="border-t border-white/10 pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setOpenPiante((v) => !v)}
-                                        className="w-full flex items-center justify-between rounded-md px-4 py-3 text-lg text-white/90 hover:bg-white/10"
-                                    >
-                                        <span>Piante</span>
-                                        <ChevronDown className={`h-5 w-5 transition-transform ${openPiante ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {openPiante && (
-                                        <div className="pl-4 py-2 space-y-1">
-                                            <Link to="/piante" onClick={() => setOpenMobile(false)} className="block rounded-md px-3 py-2 text-white/85 hover:bg-white/10">
-                                                Le mie piante
-                                            </Link>
-
-                                        </div>
-                                    )}
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-gray-700 leading-none">{user?.username}</span>
+                                    <Link to="/profilo" className="text-xs text-emerald-600 hover:underline">Vedi profilo</Link>
                                 </div>
+                            </div>
+                            <button onClick={handleLogout} className="p-2.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors" title="Esci">
+                                <LogOut className="h-5 w-5" />
+                            </button>
+                        </>
+                    )}
+                </div>
 
-                                {/* AI Tools fisarmonica */}
-                                <div className="border-t border-white/10 pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setOpenAI((v) => !v)}
-                                        className="w-full flex items-center justify-between rounded-md px-4 py-3 text-lg text-white/90 hover:bg-white/10"
-                                    >
-                                        <span>AI Tools</span>
-                                        <ChevronDown className={`h-5 w-5 transition-transform ${openAI ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {openAI && (
-                                        <div className="pl-4 py-2 space-y-1">
+                <button className="md:hidden p-2 text-emerald-800" onClick={() => setOpenMobile(!openMobile)}>
+                    {openMobile ? <X /> : <Menu />}
+                </button>
+            </div>
 
-                                            <Link to="/ai/irrigazione" onClick={() => setOpenMobile(false)} className="block rounded-md px-3 py-2 text-white/85 hover:bg-white/10">
-                                                Previsione irrigazione
-                                            </Link>
-
-
-                                        </div>
-                                    )}
+            {openMobile && (
+                <div ref={mobileRef} className="md:hidden absolute top-24 left-4 right-4 bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 border border-white/50 animate-in slide-in-from-top-4 z-50">
+                    <div className="flex flex-col space-y-2">
+                        {!isAuthenticated ? (
+                            <>
+                                <Link to="/" onClick={() => setOpenMobile(false)} className="p-3 font-bold text-gray-700">Home</Link>
+                                <Link to="/login" onClick={() => setOpenMobile(false)} className="w-full text-center py-3 rounded-xl bg-gray-100 font-bold text-gray-700">Accedi</Link>
+                                <Link to="/register" onClick={() => setOpenMobile(false)} className="w-full text-center py-3 rounded-xl bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-200">Registrati</Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/dashboard" onClick={() => setOpenMobile(false)} className="p-3 font-bold text-gray-700 hover:bg-gray-50 rounded-xl">Dashboard</Link>
+                                <div className="bg-emerald-50/50 rounded-2xl p-2 space-y-1">
+                                    <p className="px-3 py-2 text-xs font-bold text-emerald-400 uppercase">Menu Rapido</p>
+                                    <Link to="/piante" onClick={() => setOpenMobile(false)} className="block p-3 rounded-xl hover:bg-white font-medium text-emerald-800">🌿 Le mie piante</Link>
+                                    <Link to="/ai/irrigazione" onClick={() => setOpenMobile(false)} className="block p-3 rounded-xl hover:bg-white font-medium text-emerald-800">🤖 Assistente AI</Link>
                                 </div>
-
-                                <div className="mt-4 grid grid-cols-2 gap-3">
-                                    <Link to="/profilo" onClick={() => setOpenMobile(false)} className={btnGhost}>
-                                        Profilo
-                                    </Link>
-                                    <button
-                                        onClick={() => {
-                                            handleLogout();
-                                            setOpenMobile(false);
-                                        }}
-                                        className={btnPrimary}
-                                    >
-                                        <LogOut className="h-5 w-5" /> Logout
-                                    </button>
-                                </div>
+                                <button onClick={() => {handleLogout(); setOpenMobile(false)}} className="w-full py-3 mt-2 text-red-500 font-bold hover:bg-red-50 rounded-xl">Esci</button>
                             </>
                         )}
                     </div>
