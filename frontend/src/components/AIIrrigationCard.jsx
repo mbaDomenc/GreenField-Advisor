@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
     Droplets, CloudRain, Thermometer, RefreshCw, CheckCircle, Brain, 
     AlertCircle, Clock, MapPin, X, Activity, Wind, SunMedium, Leaf, Sprout,
-    BarChart3, AlertTriangle, Layers, FlaskConical, FileText
+    BarChart3, AlertTriangle, FileText
 } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 
-//LISTA TIPI DI CONCIME SUPPORTATI
+// 🌱 LISTA TIPI DI CONCIME SUPPORTATI
 const FERTILIZER_TYPES = [
     "Universale Liquido",
     "Universale Granulare",
@@ -20,13 +20,11 @@ const FERTILIZER_TYPES = [
 ];
 
 const statusPill = (rec) => {
-    // Logica Nuova Pipeline
     if (rec?.should_water) {
         return { text: 'Irriga ora', cls: 'bg-blue-100 text-blue-800 ring-1 ring-inset ring-blue-200', icon: Droplets };
     } else if (rec?.should_water === false) {
         return { text: 'Non irrigare', cls: 'bg-green-100 text-green-800 ring-1 ring-inset ring-green-200', icon: CheckCircle };
     }
-    // Fallback
     return { text: 'Analisi...', cls: 'bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200', icon: Brain };
 };
 
@@ -120,7 +118,18 @@ const AIIrrigationCard = ({
         else fetchSelf();
     };
 
-    // --- HANDLER IRRIGAZIONE ---
+    // 🟢 FUNZIONI APERTURA MODALI (Separate per sicurezza)
+    const openIrrigModal = () => {
+        setIrrigForm({ liters: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
+        setShowIrrigModal(true);
+    };
+
+    const openFertModal = () => {
+        setFertForm({ type: '', dose: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
+        setShowFertModal(true);
+    };
+
+    // --- HANDLER SALVATAGGIO IRRIGAZIONE ---
     const handleAddIrrigation = async () => {
         try {
             await api.post(`/api/piante/${plant.id}/interventi`, {
@@ -135,10 +144,9 @@ const AIIrrigationCard = ({
         } catch (e) { alert('Errore salvataggio irrigazione'); }
     };
 
-    // --- HANDLER CONCIMAZIONE ---
+    // --- HANDLER SALVATAGGIO CONCIMAZIONE ---
     const handleAddFertilization = async () => {
         if (!fertForm.type) return alert('Seleziona il tipo di concime');
-        
         try {
             await api.post(`/api/piante/${plant.id}/interventi`, {
                 type: 'concimazione',
@@ -157,17 +165,12 @@ const AIIrrigationCard = ({
         }
     };
 
-    // Pillola Stato
     const pill = statusPill(suggestion);
     
-    // Valori Meteo (Con Fix Optional Chaining per evitare crash se weather è null)
+    // Valori Meteo (Safe Check)
     const tempVal = cleanedData.temperature ?? weather?.temp;
     const humVal = cleanedData.humidity ?? weather?.humidity;
     const rainVal = cleanedData.rainfall ?? weather?.rainNext24h;
-    
-    // Valore Suolo (Usato solo nel drawer)
-    const soilRaw = (effectiveResult?.details?.cleaned_data?.soil_moisture ?? weather?.soilMoistureApprox);
-    const soilValue = Number.isFinite(soilRaw) ? `${Math.round(soilRaw)}%` : '—';
 
     return (
         <>
@@ -200,15 +203,12 @@ const AIIrrigationCard = ({
                     </span>
                 </div>
 
-                {/* Descrizione Breve */}
                 {suggestion?.description && (
                     <p className="text-sm text-gray-700 mb-4 line-clamp-2 bg-gray-50 p-2 rounded border border-gray-100">
                         {suggestion.description}
                     </p>
                 )}
 
-                {/* Metriche Grid */}
-                {/* 🟢 MODIFICA: Rimosso Soil Moisture per non confondere l'utente. Layout 3 colonne. */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
                     <MetricBox icon={Thermometer} label="Temp" value={tempVal ? `${Math.round(tempVal)}°` : '—'} iconClass="text-orange-500" />
                     <MetricBox icon={Droplets} label="Umidità" value={humVal ? `${Math.round(humVal)}%` : '—'} iconClass="text-blue-500" />
@@ -220,11 +220,8 @@ const AIIrrigationCard = ({
                     
                     {/* Bottone Irrigazione */}
                     <button 
-                        onClick={() => {
-                            setIrrigForm({ liters: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
-                            setShowIrrigModal(true);
-                        }}
-                        className="flex-1 bg-blue-600 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-1.5"
+                        onClick={openIrrigModal} // 🟢 USA FUNZIONE DEDICATA
+                        className="flex-1 bg-blue-600 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                         title="Registra Irrigazione"
                     >
                         <CheckCircle className="h-4 w-4" /> Irriga
@@ -232,14 +229,11 @@ const AIIrrigationCard = ({
 
                     {/* 🟢 Bottone Concimazione */}
                     <button 
-                        onClick={() => {
-                            setFertForm({ type: '', dose: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
-                            setShowFertModal(true);
-                        }}
-                        className="flex-1 bg-amber-500 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 flex items-center justify-center gap-1.5"
+                        onClick={openFertModal} // 🟢 USA FUNZIONE DEDICATA
+                        className="flex-1 bg-amber-500 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                         title="Registra Concimazione"
                     >
-                        <FlaskConical className="h-4 w-4" /> Concima
+                        <Sprout className="h-4 w-4" /> Concima
                     </button>
 
                     <button 
@@ -259,10 +253,76 @@ const AIIrrigationCard = ({
                 </div>
             </div>
 
-            {/* --- MODALE IRRIGAZIONE e CONCIMAZIONE sono invariati --- */}
-            {/* ... */}
+            {/* --- MODALE IRRIGAZIONE --- */}
+            {showIrrigModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 relative">
+                        <button onClick={() => setShowIrrigModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+                        
+                        <h3 className="text-lg font-bold mb-4 text-blue-900 flex items-center gap-2">
+                            <Droplets className="h-5 w-5" /> Registra Irrigazione
+                        </h3>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Quantità (Litri)</label>
+                                <input type="number" step="0.5" value={irrigForm.liters} onChange={e => setIrrigForm({...irrigForm, liters: e.target.value})} className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="Es. 1.5"/>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Data e Ora</label>
+                                <input type="datetime-local" value={irrigForm.executedAt} onChange={e => setIrrigForm({...irrigForm, executedAt: e.target.value})} className="w-full border rounded-lg p-2" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                                <textarea value={irrigForm.notes} onChange={e => setIrrigForm({...irrigForm, notes: e.target.value})} className="w-full border rounded-lg p-2 resize-none" rows={2} />
+                            </div>
+                            <div className="flex gap-2 mt-4">
+                                <button onClick={() => setShowIrrigModal(false)} className="flex-1 border rounded-lg py-2 text-gray-600">Annulla</button>
+                                <button onClick={handleAddIrrigation} className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-bold hover:bg-blue-700">Salva</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            {/* --- DRAWER DETTAGLI (Qui i dati Soil Moisture e AWC restano utili) --- */}
+            {/* --- MODALE CONCIMAZIONE --- */}
+            {showFertModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 relative">
+                        <button onClick={() => setShowFertModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+
+                        <h3 className="text-lg font-bold mb-4 text-amber-800 flex items-center gap-2">
+                            <Sprout className="h-5 w-5" /> Registra Concimazione
+                        </h3>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Concime</label>
+                                <select value={fertForm.type} onChange={e => setFertForm({...fertForm, type: e.target.value})} className="w-full border rounded-lg p-2 bg-white">
+                                    <option value="">Seleziona tipo...</option>
+                                    {FERTILIZER_TYPES.map((t, i) => <option key={i} value={t}>{t}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Dose</label>
+                                <input type="text" value={fertForm.dose} onChange={e => setFertForm({...fertForm, dose: e.target.value})} className="w-full border rounded-lg p-2" placeholder="Es. 10ml"/>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Data e Ora</label>
+                                <input type="datetime-local" value={fertForm.executedAt} onChange={e => setFertForm({...fertForm, executedAt: e.target.value})} className="w-full border rounded-lg p-2" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                                <textarea value={fertForm.notes} onChange={e => setFertForm({...fertForm, notes: e.target.value})} className="w-full border rounded-lg p-2 resize-none" rows={2} />
+                            </div>
+                            <div className="flex gap-2 mt-4">
+                                <button onClick={() => setShowFertModal(false)} className="flex-1 border rounded-lg py-2 text-gray-600">Annulla</button>
+                                <button onClick={handleAddFertilization} className="flex-1 bg-amber-500 text-white rounded-lg py-2 font-bold hover:bg-amber-600">Salva</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- DRAWER DETTAGLI --- */}
             {detailsOpen && (
                 <>
                     <div className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm" onClick={() => setDetailsOpen(false)} />
@@ -280,7 +340,7 @@ const AIIrrigationCard = ({
 
                         <div className="p-6 space-y-8">
 
-                            {/* 1. NOTE & DIAGNOSI VISIVA */}
+                            {/* NOTE & DIAGNOSI VISIVA */}
                             {plant.description && (
                                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                                     <h4 className="text-sm font-bold text-gray-900 uppercase mb-2 flex items-center gap-2">
@@ -292,7 +352,7 @@ const AIIrrigationCard = ({
                                 </div>
                             )}
 
-                            {/* 2. SEZIONE CONCIMAZIONE */}
+                            {/* CONCIMAZIONE */}
                             {fertilizer && (
                                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 p-3 opacity-10">
@@ -311,7 +371,7 @@ const AIIrrigationCard = ({
                                 </div>
                             )}
 
-                            {/* 3. SEZIONE IRRIGAZIONE */}
+                            {/* IRRIGAZIONE */}
                             <div>
                                 <h4 className="text-sm font-bold text-gray-900 uppercase mb-3 flex items-center gap-2">
                                     <Droplets className="h-4 w-4 text-blue-600" /> Strategia Irrigazione
@@ -328,7 +388,7 @@ const AIIrrigationCard = ({
                                     </div>
                                     <div className="p-4 space-y-1">
                                         <Row 
-                                            label="Quantità suggerita" 
+                                            label="Quantità" 
                                             value={suggestion?.should_water ? `${suggestion?.water_amount_liters} Litri` : "Non è necessaria acqua momentaneamente"} 
                                             highlight 
                                         />
@@ -338,7 +398,7 @@ const AIIrrigationCard = ({
                                 </div>
                             </div>
 
-                            {/* 4. ANALISI AGRONOMICA AVANZATA */}
+                            {/* ANALISI AGRONOMICA AVANZATA */}
                             {features.vpd !== undefined && (
                                 <div className="mt-6 border-t border-gray-100 pt-4">
                                     <h4 className="text-sm font-bold text-gray-900 uppercase mb-3 flex items-center gap-2">
@@ -383,7 +443,7 @@ const AIIrrigationCard = ({
                                 </div>
                             )}
 
-                            {/* 5. ANOMALIE */}
+                            {/* ANOMALIE */}
                             {anomalies.length > 0 && (
                                 <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                                     <h4 className="text-sm font-bold text-red-800 uppercase mb-2 flex items-center gap-2">
@@ -396,16 +456,6 @@ const AIIrrigationCard = ({
                                             </li>
                                         ))}
                                     </ul>
-                                </div>
-                            )}
-                            
-                            {/* 6. INDICATORI BASE (solo se necessario) */}
-                            {features.water_stress_index !== undefined && (
-                                <div className="border-t border-gray-100 pt-4">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <MetricBox icon={BarChart3} label="Stress Idrico" value={`${features.water_stress_index?.toFixed(0)}/100`} iconClass="text-red-500" />
-                                        <MetricBox icon={SunMedium} label="Evapotraspir." value={`${features.evapotranspiration} mm`} iconClass="text-orange-500" />
-                                    </div>
                                 </div>
                             )}
 
