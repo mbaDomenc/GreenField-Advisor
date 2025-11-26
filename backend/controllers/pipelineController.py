@@ -1,40 +1,28 @@
 """
 Controller per la pipeline di processing.
 """
-
 import logging
 from datetime import datetime
 from fastapi import HTTPException
 from pipeline.pipeline_manager import PipelineManager
 from models.pipelineModel import (
-    PipelineRequest, 
-    PipelineResponse,
-    IrrigationSuggestion,
-    PipelineDetailsResponse,
-    PipelineMetadataResponse,
-    HealthCheckResponse
+    PipelineRequest, PipelineResponse, IrrigationSuggestion,
+    PipelineDetailsResponse, PipelineMetadataResponse, HealthCheckResponse
 )
-
 
 logger = logging.getLogger(__name__)
 
-
 class PipelineController:
-    """
-    Controller per gestire le richieste alla pipeline.
-    """
     
-    SUPPORTED_PLANTS = ["tomato", "lettuce", "basil", "pepper", "cucumber", "generic"]
+    
+    SUPPORTED_PLANTS = ["tomato", "potato", "peach", "grape", "pepper", "generic"]
     
     def __init__(self):
         logger.info("✅ PipelineController inizializzato")
         
     def process_sensor_data(self, request: PipelineRequest) -> PipelineResponse:
-        """
-        Processa dati sensori attraverso la pipeline.
-        """
         try:
-            # Valida plant_type
+            # 1. Validazione
             if request.plant_type not in self.SUPPORTED_PLANTS:
                 raise HTTPException(
                     status_code=400,
@@ -42,33 +30,28 @@ class PipelineController:
                            f"Supportati: {', '.join(self.SUPPORTED_PLANTS)}"
                 )
             
-            logger.info(f"Inizio processing per pianta: {request.plant_type}")
+            logger.info(f"Inizio processing IDONEITÀ per pianta: {request.plant_type}")
             started_at = datetime.utcnow().isoformat()
             
-            # Converti SensorDataInput a dict
+            # 2. Preparazione Dati
             sensor_data = request.sensor_data.model_dump()
-
+            
+            #INIEZIONE DEL TERRENO
             if request.soil_type:
-                # La pipeline leggerà il campo 'soil' direttamente da qui
-                sensor_data["soil"] = request.soil_type.lower()
+                sensor_data["soil"] = request.soil_type.lower() 
+                # Iniettiamo anche il tipo pianta nei dati sensore per l'ActionGenerator
+                sensor_data["plant_type"] = request.plant_type
             
-            # Crea pipeline manager per questo tipo di pianta
+            # 3. Esecuzione Pipeline
             pipeline = PipelineManager(plant_type=request.plant_type)
-            
-            # Esegui pipeline
             result = pipeline.process(sensor_data)
             
-            logger.info(f"Processing completato con successo per {request.plant_type}")
-
-            # Estrai il dizionario 'details'
+            # 4. Formattazione Risposta
             details_dict = result.get("details", {})
-            
-            # Estrai suggerimenti da details (che contiene il campo frequency_estimation generato da ActionGenerator)
             suggestions = details_dict.get("full_suggestions", {})
             main_action = suggestions.get("main_action", {})
             timing_info = suggestions.get("timing", {})
             
-            #Struttura la risposta con PipelineResponse
             return PipelineResponse(
                 status=result.get("status", "success"),
                 suggestion=IrrigationSuggestion(
@@ -96,26 +79,16 @@ class PipelineController:
                     stage_results=result.get("metadata", {}).get("stage_results", {})
                 )
             )
-            
-        except HTTPException:
-            raise
-        except ValueError as e:
-            logger.warning(f"Dati non validi: {str(e)}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Dati sensori non validi: {str(e)}"
-            )
+
+        except HTTPException: raise
         except Exception as e:
-            logger.exception(f"Errore imprevisto durante processing: {str(e)}")
+            logger.exception(f"Errore pipeline: {str(e)}")
             return PipelineResponse(
                 status="error",
-                suggestion=None,
-                details=None,
+                suggestion=None, details=None,
                 metadata=PipelineMetadataResponse(
                     started_at=started_at,
-                    completed_at=datetime.utcnow().isoformat(),
-                    errors=[str(e)],
-                    warnings=[]
+                    errors=[str(e)]
                 )
             )
     
