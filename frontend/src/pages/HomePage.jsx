@@ -1,8 +1,28 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Sprout, Brain, Sliders, ArrowRight, Stars } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Sprout, Brain, Sliders, ArrowRight, Stars, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext'; // 🟢 IMPORT NECESSARIO
 
 const HomePage = () => {
+    const location = useLocation();
+    const { isAuthenticated } = useAuth(); // 🟢 RECUPERA LO STATO
+    const [showBanner, setShowBanner] = useState(false);
+
+    useEffect(() => {
+        if (location.state?.reason === "not-authorized") {
+            setShowBanner(true);
+            const t = setTimeout(() => setShowBanner(false), 4000);
+            return () => clearTimeout(t);
+        }
+    }, [location.state]);
+
+    const scrollToFeatures = () => {
+        const section = document.getElementById('funzionalita');
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     return (
         <div className="min-h-screen pt-28 pb-20 px-4 overflow-hidden bg-emerald-50">
             
@@ -11,6 +31,14 @@ const HomePage = () => {
                  <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-emerald-300/20 rounded-full blur-[120px]"></div>
                  <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-teal-300/20 rounded-full blur-[120px]"></div>
             </div>
+
+            {showBanner && (
+                <div className="mx-auto max-w-3xl px-4 pt-6 fixed top-20 left-0 right-0 z-50">
+                    <div className="rounded-xl bg-red-50 px-6 py-4 text-red-700 text-sm shadow-xl border border-red-100 flex items-center gap-3 animate-bounce">
+                        <ShieldCheck className="h-5 w-5" /> Non sei autorizzato ad accedere a quella pagina.
+                    </div>
+                </div>
+            )}
 
             {/* HERO SECTION */}
             <div className="max-w-7xl mx-auto text-center mb-24 relative">
@@ -32,11 +60,16 @@ const HomePage = () => {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row justify-center gap-5 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-200">
-                    <Link to="/register" className="btn-bouncy bg-emerald-600 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 hover:bg-emerald-500 transition-colors">
-                        Inizia Gratis <ArrowRight className="h-5 w-5" />
-                    </Link>
+                    
+                    {/* 🟢 MOSTRA SOLO SE NON SEI LOGGATO */}
+                    {!isAuthenticated && (
+                        <Link to="/register" className="btn-bouncy bg-emerald-600 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 hover:bg-emerald-500 transition-colors">
+                            Inizia Gratis <ArrowRight className="h-5 w-5" />
+                        </Link>
+                    )}
+
                     <button 
-                        onClick={() => document.getElementById('features').scrollIntoView({behavior: 'smooth'})} 
+                        onClick={scrollToFeatures} 
                         className="btn-bouncy bg-white text-gray-700 px-10 py-4 rounded-full text-lg font-bold shadow-lg border border-gray-100 hover:bg-gray-50 transition-colors"
                     >
                         Scopri di più
@@ -66,7 +99,7 @@ const HomePage = () => {
             </div>
 
             {/* FEATURES SECTION */}
-            <div id="features" className="max-w-7xl mx-auto px-6 lg:px-8 pb-20">
+            <div id="funzionalita" className="max-w-7xl mx-auto px-6 lg:px-8 pb-20 scroll-mt-32">
                 <div className="text-center mb-16">
                     <h2 className="text-3xl font-bold text-emerald-900 mb-4">Tecnologia al servizio della natura</h2>
                     <p className="text-gray-600 max-w-2xl mx-auto">Abbiamo unito agronomia e intelligenza artificiale per darti gli strumenti migliori.</p>
