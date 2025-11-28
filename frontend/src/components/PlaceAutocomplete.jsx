@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-/** Carica una volta lo script Google Maps JS con Places */
+
 const loadGoogleScript = (apiKey) =>
   new Promise((resolve, reject) => {
     if (window.google?.maps?.places) return resolve();
@@ -49,19 +49,7 @@ function parseAddressComponents(components = []) {
   return { locality, admin2, admin1, country, countryCode, display };
 }
 
-/**
- * PlaceAutocomplete – versione programmatica con AutocompleteService
- *
- * Props:
- * - value: string (input controllato)
- * - onChangeText: (text: string) => void
- * - onSelectPlace: ({ formattedAddress, lat, lng, placeId, addrParts }) => void
- * - placeholder?: string
- * - apiKey?: string (default: process.env.REACT_APP_GOOGLE_MAPS_API_KEY)
- * - className?: string
- * - restrictCountry?: string | null (es. "it")
- * - types?: "(cities)" | "(regions)" | "geocode"   (default: "(cities)")
- */
+
 export default function PlaceAutocomplete({
   value,
   onChangeText,
@@ -83,7 +71,7 @@ export default function PlaceAutocomplete({
   const [errPred, setErrPred] = useState(null);
   const [highlightIndex, setHighlightIndex] = useState(-1);
 
-  // ✅ FIX: sopprimi la prossima ricerca quando la modifica del testo è programmatica (selezione)
+  //FIX: sopprimi la prossima ricerca quando la modifica del testo è programmatica (selezione)
   const selectingRef = useRef(false);
 
   // Debounce helper
@@ -109,7 +97,7 @@ export default function PlaceAutocomplete({
         // AutocompleteService (predictions)
         svcRef.current = new maps.places.AutocompleteService();
 
-        // PlacesService per getDetails: serve un div "dummy"
+        
         const dummy = document.createElement("div");
         psRef.current = new maps.places.PlacesService(dummy);
 
@@ -300,7 +288,7 @@ export default function PlaceAutocomplete({
         value={value || ""}
         onChange={(e) => onChangeText?.(e.target.value)}
         onFocus={() => {
-          // ✅ Non aprire se siamo in fase di selezione programmatica
+          //Non aprire se siamo in fase di selezione programmatica
           if (!selectingRef.current && predictions.length > 0) setOpen(true);
         }}
         onKeyDown={onKeyDown}

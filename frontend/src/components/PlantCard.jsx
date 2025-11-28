@@ -9,7 +9,7 @@ const PlantCard = ({ plant, onOpenDetail, onInlineSave, onDelete }) => {
     description: plant?.description || ''
   });
 
-  const pid = plant?.id; // usa id normalizzato
+  const pid = plant?.id; // usa id normalizzato per quanto riguarda la pianta
 
   const handleEditStart = (field, e) => {
     e.stopPropagation();
@@ -28,7 +28,7 @@ const PlantCard = ({ plant, onOpenDetail, onInlineSave, onDelete }) => {
 
   const handleEditSave = async (field, e) => {
     e.stopPropagation();
-    if (!pid) return; // guard
+    if (!pid) return;
     try {
       await onInlineSave(pid, { [field]: editValues[field] });
       setEditingField(null);
@@ -135,7 +135,7 @@ const PlantCard = ({ plant, onOpenDetail, onInlineSave, onDelete }) => {
         <div className="mb-3 flex flex-wrap items-center gap-2">
              <p className="text-gray-600 italic">{plant?.species}</p>
              
-             {/* 🟢 NUOVO: Mostra il terreno invece della fase */}
+             {/*Mostra il terreno invece della fase */}
              {plant?.soil && (
                  <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full border border-amber-200">
                     {plant.soil}

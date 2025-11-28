@@ -7,8 +7,6 @@ export default function Navbar() {
     const [openMobile, setOpenMobile] = useState(false);
     const [openPiante, setOpenPiante] = useState(false);
     const [openAI, setOpenAI] = useState(false);
-
-    // Riferimenti per click outside
     const mobileRef = useRef(null);
     const pianteRef = useRef(null);
     const aiRef = useRef(null);
@@ -29,7 +27,6 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // --- STILI AGGIORNATI (FISSI, NO FLUTTUANTI) ---
     
     // Barra fissa in alto, tutta larghezza, sfondo bianco semitrasparente
     const navClasses = "absolute top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-emerald-100 shadow-sm h-20";

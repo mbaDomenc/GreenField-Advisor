@@ -16,8 +16,6 @@ export default function RequireGuest({ children, redirectTo = '/dashboard', show
 
   // Lascia renderizzare finché l'AuthContext non ha finito di inizializzare
   if (loading) return children;
-
-  // Se NON sei autenticato → lascia entrare (es. su /login, /register)
   if (!isAuthenticated) return children;
 
   // Sei autenticato. Ora distinguo:

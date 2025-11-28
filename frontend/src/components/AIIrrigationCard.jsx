@@ -2,11 +2,11 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
     Droplets, CloudRain, Thermometer, RefreshCw, CheckCircle, Brain, 
     AlertCircle, Clock, MapPin, X, Activity, Wind, SunMedium, Leaf, Sprout,
-    BarChart3, AlertTriangle, FileText
+    BarChart3, AlertTriangle, Layers, FlaskConical, FileText
 } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 
-// 🌱 LISTA TIPI DI CONCIME SUPPORTATI
+//LISTA TIPI DI CONCIME SUPPORTATI
 const FERTILIZER_TYPES = [
     "Universale Liquido",
     "Universale Granulare",
@@ -20,6 +20,7 @@ const FERTILIZER_TYPES = [
 ];
 
 const statusPill = (rec) => {
+
     if (rec?.should_water) {
         return { text: 'Irriga ora', cls: 'bg-blue-100 text-blue-800 ring-1 ring-inset ring-blue-200', icon: Droplets };
     } else if (rec?.should_water === false) {
@@ -118,18 +119,7 @@ const AIIrrigationCard = ({
         else fetchSelf();
     };
 
-    // 🟢 FUNZIONI APERTURA MODALI (Separate per sicurezza)
-    const openIrrigModal = () => {
-        setIrrigForm({ liters: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
-        setShowIrrigModal(true);
-    };
-
-    const openFertModal = () => {
-        setFertForm({ type: '', dose: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
-        setShowFertModal(true);
-    };
-
-    // --- HANDLER SALVATAGGIO IRRIGAZIONE ---
+    // --- HANDLER IRRIGAZIONE ---
     const handleAddIrrigation = async () => {
         try {
             await api.post(`/api/piante/${plant.id}/interventi`, {
@@ -144,9 +134,10 @@ const AIIrrigationCard = ({
         } catch (e) { alert('Errore salvataggio irrigazione'); }
     };
 
-    // --- HANDLER SALVATAGGIO CONCIMAZIONE ---
+    // --- HANDLER CONCIMAZIONE ---
     const handleAddFertilization = async () => {
         if (!fertForm.type) return alert('Seleziona il tipo di concime');
+        
         try {
             await api.post(`/api/piante/${plant.id}/interventi`, {
                 type: 'concimazione',
@@ -165,12 +156,18 @@ const AIIrrigationCard = ({
         }
     };
 
+    // Pillola Stato
     const pill = statusPill(suggestion);
     
-    // Valori Meteo (Safe Check)
-    const tempVal = cleanedData.temperature ?? weather?.temp;
-    const humVal = cleanedData.humidity ?? weather?.humidity;
-    const rainVal = cleanedData.rainfall ?? weather?.rainNext24h;
+    // Se weather.temp esiste (ed è un numero), usalo. 
+    // Altrimenti usa cleanedData (backup).
+    const tempVal = (typeof weather?.temp === 'number') ? weather.temp : cleanedData.temperature;
+    const humVal = (typeof weather?.humidity === 'number') ? weather.humidity : cleanedData.humidity;
+    const rainVal = (typeof weather?.rainNext24h === 'number') ? weather.rainNext24h : cleanedData.rainfall;
+    
+    // Il suolo lo prendiamo sempre dall'AI (che ha la logica Smart Sensor)
+    const soilRaw = (effectiveResult?.details?.cleaned_data?.soil_moisture ?? weather?.soilMoistureApprox);
+    const soilValue = Number.isFinite(soilRaw) ? `${Math.round(soilRaw)}%` : '—';
 
     return (
         <>
@@ -203,12 +200,14 @@ const AIIrrigationCard = ({
                     </span>
                 </div>
 
+                {/* Descrizione Breve */}
                 {suggestion?.description && (
                     <p className="text-sm text-gray-700 mb-4 line-clamp-2 bg-gray-50 p-2 rounded border border-gray-100">
                         {suggestion.description}
                     </p>
                 )}
 
+                {/* Metriche Grid */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
                     <MetricBox icon={Thermometer} label="Temp" value={tempVal ? `${Math.round(tempVal)}°` : '—'} iconClass="text-orange-500" />
                     <MetricBox icon={Droplets} label="Umidità" value={humVal ? `${Math.round(humVal)}%` : '—'} iconClass="text-blue-500" />
@@ -217,23 +216,26 @@ const AIIrrigationCard = ({
 
                 {/* Footer Card: Pulsanti Azione */}
                 <div className="mt-auto flex gap-2 pt-4 border-t border-gray-100">
-                    
-                    {/* Bottone Irrigazione */}
                     <button 
-                        onClick={openIrrigModal} // 🟢 USA FUNZIONE DEDICATA
-                        className="flex-1 bg-blue-600 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                        onClick={() => {
+                            setIrrigForm({ liters: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
+                            setShowIrrigModal(true);
+                        }}
+                        className="flex-1 bg-blue-600 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-1.5"
                         title="Registra Irrigazione"
                     >
                         <CheckCircle className="h-4 w-4" /> Irriga
                     </button>
 
-                    {/* 🟢 Bottone Concimazione */}
                     <button 
-                        onClick={openFertModal} // 🟢 USA FUNZIONE DEDICATA
-                        className="flex-1 bg-amber-500 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                        onClick={() => {
+                            setFertForm({ type: '', dose: '', executedAt: new Date().toISOString().slice(0, 16), notes: '' });
+                            setShowFertModal(true);
+                        }}
+                        className="flex-1 bg-amber-500 text-white px-2 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 flex items-center justify-center gap-1.5"
                         title="Registra Concimazione"
                     >
-                        <Sprout className="h-4 w-4" /> Concima
+                        <FlaskConical className="h-4 w-4" /> Concima
                     </button>
 
                     <button 
@@ -255,17 +257,15 @@ const AIIrrigationCard = ({
 
             {/* --- MODALE IRRIGAZIONE --- */}
             {showIrrigModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 relative">
-                        <button onClick={() => setShowIrrigModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
-                        
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
                         <h3 className="text-lg font-bold mb-4 text-blue-900 flex items-center gap-2">
                             <Droplets className="h-5 w-5" /> Registra Irrigazione
                         </h3>
                         <div className="space-y-3">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantità (Litri)</label>
-                                <input type="number" step="0.5" value={irrigForm.liters} onChange={e => setIrrigForm({...irrigForm, liters: e.target.value})} className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="Es. 1.5"/>
+                                <input type="number" step="0.5" value={irrigForm.liters} onChange={e => setIrrigForm({...irrigForm, liters: e.target.value})} className="w-full border rounded-lg p-2" placeholder="Es. 1.5"/>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Data e Ora</label>
@@ -277,7 +277,7 @@ const AIIrrigationCard = ({
                             </div>
                             <div className="flex gap-2 mt-4">
                                 <button onClick={() => setShowIrrigModal(false)} className="flex-1 border rounded-lg py-2 text-gray-600">Annulla</button>
-                                <button onClick={handleAddIrrigation} className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-bold hover:bg-blue-700">Salva</button>
+                                <button onClick={handleAddIrrigation} className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-bold">Salva</button>
                             </div>
                         </div>
                     </div>
@@ -286,12 +286,10 @@ const AIIrrigationCard = ({
 
             {/* --- MODALE CONCIMAZIONE --- */}
             {showFertModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 relative">
-                        <button onClick={() => setShowFertModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
-
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
                         <h3 className="text-lg font-bold mb-4 text-amber-800 flex items-center gap-2">
-                            <Sprout className="h-5 w-5" /> Registra Concimazione
+                            <FlaskConical className="h-5 w-5" /> Registra Concimazione
                         </h3>
                         <div className="space-y-3">
                             <div>
@@ -315,7 +313,7 @@ const AIIrrigationCard = ({
                             </div>
                             <div className="flex gap-2 mt-4">
                                 <button onClick={() => setShowFertModal(false)} className="flex-1 border rounded-lg py-2 text-gray-600">Annulla</button>
-                                <button onClick={handleAddFertilization} className="flex-1 bg-amber-500 text-white rounded-lg py-2 font-bold hover:bg-amber-600">Salva</button>
+                                <button onClick={handleAddFertilization} className="flex-1 bg-amber-500 text-white rounded-lg py-2 font-bold">Salva</button>
                             </div>
                         </div>
                     </div>
@@ -340,7 +338,7 @@ const AIIrrigationCard = ({
 
                         <div className="p-6 space-y-8">
 
-                            {/* NOTE & DIAGNOSI VISIVA */}
+                            {/* 1. NOTE & DIAGNOSI VISIVA */}
                             {plant.description && (
                                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                                     <h4 className="text-sm font-bold text-gray-900 uppercase mb-2 flex items-center gap-2">
@@ -352,7 +350,7 @@ const AIIrrigationCard = ({
                                 </div>
                             )}
 
-                            {/* CONCIMAZIONE */}
+                            {/* 2. SEZIONE CONCIMAZIONE */}
                             {fertilizer && (
                                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 p-3 opacity-10">
@@ -371,7 +369,7 @@ const AIIrrigationCard = ({
                                 </div>
                             )}
 
-                            {/* IRRIGAZIONE */}
+                            {/* 3. SEZIONE IRRIGAZIONE */}
                             <div>
                                 <h4 className="text-sm font-bold text-gray-900 uppercase mb-3 flex items-center gap-2">
                                     <Droplets className="h-4 w-4 text-blue-600" /> Strategia Irrigazione
@@ -398,7 +396,7 @@ const AIIrrigationCard = ({
                                 </div>
                             </div>
 
-                            {/* ANALISI AGRONOMICA AVANZATA */}
+                            {/* 4. ANALISI AGRONOMICA AVANZATA */}
                             {features.vpd !== undefined && (
                                 <div className="mt-6 border-t border-gray-100 pt-4">
                                     <h4 className="text-sm font-bold text-gray-900 uppercase mb-3 flex items-center gap-2">
@@ -443,7 +441,7 @@ const AIIrrigationCard = ({
                                 </div>
                             )}
 
-                            {/* ANOMALIE */}
+                            {/* 5. ANOMALIE */}
                             {anomalies.length > 0 && (
                                 <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                                     <h4 className="text-sm font-bold text-red-800 uppercase mb-2 flex items-center gap-2">
