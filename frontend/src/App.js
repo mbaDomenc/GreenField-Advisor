@@ -12,6 +12,7 @@ import PlantsList from "./pages/PlantsList";
 import PlantDetail from "./pages/PlantDetail";
 import RequireAuth from './components/RequireAuth';
 import RequireGuest from './components/RequireGuest';
+import PipelineTestPage from "./pages/PipelineTestPage";
 
 // Wrapper per la lista
 function PlantsListWrapper() {
@@ -45,10 +46,7 @@ function PlantDetailWrapper() {
 export default function App() {
     return (
         <div className="min-h-screen flex flex-col bg-[#f0fdf4]">
-            {/* 1. NAVBAR */}
             <Navbar />
-            
-            {/* 2. CONTENUTO VARIABILE (Qui vengono caricate le pagine) */}
             <main className="flex-1">
                 <Routes>
                     <Route path="/" element={<HomePage />} />
@@ -61,6 +59,14 @@ export default function App() {
                     <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>}/>
                     <Route path="/profilo" element={<RequireAuth><ProfilePage /></RequireAuth>}/>
                     <Route path="/ai/irrigazione" element={<RequireAuth><AIIrrigationPage /></RequireAuth>}/>
+                    <Route 
+                        path="/ai/pipeline-test" 
+                        element={
+                            <RequireAuth>
+                                <PipelineTestPage />
+                            </RequireAuth>
+                        } 
+                    />
 
                     {/* Piante */}
                     <Route path="/piante" element={<PlantsListWrapper />} />
@@ -70,8 +76,6 @@ export default function App() {
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </main>
-            
-            {/* 3. FOOTER */}
             <Footer />
         </div>
     );

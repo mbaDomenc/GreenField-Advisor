@@ -10,14 +10,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  /* Sfondo Base: Sfumatura delicata e fresca */
+
   background-color: #f0fdf4; 
   background-image: 
     radial-gradient(at 0% 0%, hsla(152,100%,93%,1) 0, transparent 50%), 
     radial-gradient(at 50% 0%, hsla(135,100%,94%,1) 0, transparent 50%), 
     radial-gradient(at 100% 0%, hsla(170,100%,91%,1) 0, transparent 50%);
   background-attachment: fixed;
-  color: #1e293b; /* Testo grigio scuro morbido */
+  color: #1e293b; 
 }
 
 code {
