@@ -7,7 +7,7 @@ router = APIRouter(prefix="/api/ai", tags=["ai"])
 @router.post("/analyze-health", summary="Analisi Salute Pianta")
 async def analyze_health(
     file: UploadFile = File(...),
-    plant_type: Optional[str] = Form(None) # 🟢 Riceve la specie dal frontend
+    plant_type: Optional[str] = Form(None) # Riceve la specie dal frontend
 ):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File non valido")

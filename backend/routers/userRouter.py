@@ -1,4 +1,3 @@
-# backend/routers/userRouter.py
 from fastapi import APIRouter, Response, Request, Depends, HTTPException, UploadFile, File
 
 from datetime import datetime
@@ -42,13 +41,13 @@ def get_my_profile(current_user=Depends(get_current_user)):
     except Exception:
         return {"error": "ID utente non valido"}
 
-        # ✅ Conta le piante registrate da questo utente
+        #Conta le piante registrate dall'utente preciso
     plant_count = piante_collection.count_documents({"userId": user_id})
     user["plantCount"] = plant_count
 
 
 
-    # 🔁 Conteggio irrigazioni oggi
+    #Conteggio irrigazioni oggi
 
 
     today = datetime.utcnow().date()

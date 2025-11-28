@@ -1,4 +1,3 @@
-# backend/routers/interventionsRouter.py
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from typing import List, Optional
 

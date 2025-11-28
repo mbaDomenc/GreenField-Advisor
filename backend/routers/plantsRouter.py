@@ -1,4 +1,3 @@
-# backend/routes/plantsRouter.py
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List
 from pydantic import BaseModel, Field
@@ -8,9 +7,9 @@ from models.plantModel import PlantCreate, PlantUpdate, PlantOut
 from controllers.plantsController import (
     list_plants, get_plant, create_plant, update_plant, delete_plant,
     save_plant_image, remove_plant_image,
-    calculate_irrigation_for_plant  #NUOVA FUNZIONE IMPORTATA
+    calculate_irrigation_for_plant  
 )
-# Nota: Puoi rimuovere l'import di compute_for_plant se non lo usi più altrove
+
 from controllers.ai_irrigazione_controller import compute_for_plant, compute_batch
 
 from database import db
@@ -78,13 +77,13 @@ def api_delete_plant_image(plant_id: str, current_user: dict = Depends(get_curre
     return doc
 
 
-# ======== AI IRRIGAZIONE ========
+# AI IRRIGAZIONE
 
 class AIPlantBatchIn(BaseModel):
     plantIds: List[str] = Field(default_factory=list)
 
 
-# ENDPOINT AGGIORNATO PER USARE LA NUOVA PIPELINE
+#ENDPOINT DELLA PIPELINE
 @router.post("/{plant_id}/ai/irrigazione", summary="Analisi AI Irrigazione/Concimazione")
 async def api_ai_irrigazione_per_pianta(
     plant_id: str,
@@ -102,6 +101,4 @@ def api_ai_irrigazione_batch(
     payload: AIPlantBatchIn,
     current_user: dict = Depends(get_current_user)
 ):
-    # Questo rimane collegato al vecchio controller batch per ora, 
-    # a meno che tu non voglia aggiornare anche questo.
     return compute_batch(payload.plantIds, current_user)

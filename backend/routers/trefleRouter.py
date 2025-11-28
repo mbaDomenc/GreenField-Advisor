@@ -1,4 +1,3 @@
-# backend/routers/trefleRouter.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 
@@ -30,7 +29,7 @@ def api_trefle_species_detail(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Dettaglio specie (opzionale per quando vorremo estrarre growth).
+    Dettaglio specie.
     """
     try:
         data = fetch_plant_by_id(trefle_id)
