@@ -101,7 +101,7 @@ def _map_soil_from_growth(growth: dict) -> Optional[str]:
     - soil_texture (0-10): più alto → più sabbioso
     - ph_minimum / ph_maximum
     """
-    texture = growth.get("soil_texture")  # 0-10
+    texture = growth.get("soil_texture")  
     ph_min = growth.get("ph_minimum")
     ph_max = growth.get("ph_maximum")
 
