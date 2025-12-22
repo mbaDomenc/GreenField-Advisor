@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [recentInterventions, setRecentInterventions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [locationSource, setLocationSource] = useState('profile'); // 'gps' o 'profile'
+  const [locationSource, setLocationSource] = useState('gps'); // Default GPS
 
   const now = new Date();
 
@@ -24,15 +24,27 @@ const Dashboard = () => {
     }
   }, [accessToken]);
 
-  // Funzione Helper per ottenere la posizione GPS (Promise wrapper)
+  // Funzione GPS "aggressiva"
   const getBrowserLocation = () => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error("Geolocalizzazione non supportata"));
       } else {
+        console.log("📡 Richiesta GPS in corso (High Accuracy)...");
         navigator.geolocation.getCurrentPosition(
-          (pos) => resolve(pos.coords),
-          (err) => reject(err)
+          (pos) => {
+            console.log("✅ GPS Ottenuto:", pos.coords.latitude, pos.coords.longitude);
+            resolve(pos.coords);
+          },
+          (err) => {
+            console.warn("❌ Errore GPS:", err.message);
+            reject(err);
+          },
+          {
+            enableHighAccuracy: true, // FONDAMENTALE: Usa il GPS vero, non la rete internet
+            timeout: 15000,           // Diamo più tempo (15s) per triangolare bene
+            maximumAge: 0             // VIETATO usare cache vecchia
+          }
         );
       }
     });
@@ -47,40 +59,49 @@ const Dashboard = () => {
       setUserData(user);
       updateUser?.(user);
 
-      // 2. Logica Meteo Intelligente (GPS > Profilo)
       let weatherData = null;
-      let usedSource = 'profile';
+      let usedSource = 'gps';
 
+      // 2. TENTATIVO 1: GPS (Priorità Massima)
       try {
-        // Tenta prima col GPS
         const coords = await getBrowserLocation();
-        console.log("📍 Posizione GPS rilevata:", coords.latitude, coords.longitude);
         
+        // Chiamata Meteo con coordinate esatte
         const resWeather = await api.get(`/api/weather?lat=${coords.latitude}&lon=${coords.longitude}`);
         weatherData = resWeather.data;
+        
+        // DEBUG CRUCIALE: Controlla cosa restituisce il backend
+        console.log("☁️ Dati Meteo Backend:", weatherData);
+        console.log("📍 Nome località dal Backend:", weatherData.location?.name);
+
         usedSource = 'gps';
-        
+
       } catch (gpsError) {
-        console.warn("⚠️ GPS non disponibile o negato, uso località profilo:", gpsError.message);
+        console.warn("⚠️ Fallback GPS fallito, provo con la località del profilo...");
         
-        // Fallback: usa la città del profilo
+        // 3. TENTATIVO 2: Profilo Utente (Fallback)
         if (user?.location) {
-           const resWeather = await api.get(`/api/weather?city=${encodeURIComponent(user.location)}`);
-           weatherData = resWeather.data;
+           try {
+             const resWeather = await api.get(`/api/weather?city=${encodeURIComponent(user.location)}`);
+             weatherData = resWeather.data;
+             usedSource = 'profile';
+           } catch (e) {
+             console.error("Errore meteo profilo:", e);
+           }
         }
       }
 
       setWeather(weatherData);
       setLocationSource(usedSource);
 
-      // 3. Interventi recenti
+      // 4. Interventi recenti
       const resInterv = await api.get(`/api/piante/utente/interventi-recenti`);
       setRecentInterventions(resInterv.data || []);
 
       setError(null);
     } catch (err) {
-      console.error('Errore nel caricamento dashboard:', err);
-      setError(err.response?.data?.detail || err.message || 'Errore imprevisto');
+      console.error('Errore dashboard:', err);
+      setError(err.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
@@ -102,8 +123,13 @@ const Dashboard = () => {
   
   if (!userData) return null;
 
-  // Determina il nome della località da mostrare (Meteo > Profilo)
-  const displayLocation = weather?.location?.name || userData.location?.split(',')[0] || 'Sconosciuta';
+  // LOGICA DISPLAY NOME: Se siamo in GPS, mostriamo "Posizione Rilevata" se il nome è generico
+  let displayLocation = weather?.location?.name || 'Posizione Sconosciuta';
+  
+  // Se usiamo il profilo, mostriamo quello che ha scritto l'utente
+  if (locationSource === 'profile' && userData.location) {
+      displayLocation = userData.location.split(',')[0];
+  }
 
   return (
     <div className="bg-[#f0fdf4] min-h-screen px-6 pt-36 pb-12 font-sans relative overflow-hidden">
@@ -150,11 +176,11 @@ const Dashboard = () => {
                 trend="Completate"
             />
             <StatCard 
-                title={locationSource === 'gps' ? "Posizione GPS" : "Zona Profilo"} 
+                title={locationSource === 'gps' ? "GPS (High Accuracy)" : "Città Profilo"} 
                 value={displayLocation} 
                 icon={<MapPin className="h-8 w-8 text-white" />} 
                 bgIcon={locationSource === 'gps' ? "bg-purple-500" : "bg-orange-400"}
-                trend={locationSource === 'gps' ? "Rilevata ora" : "Salvata"}
+                trend={locationSource === 'gps' ? "Rilevata" : "Salvata"}
                 isText
             />
         </div>

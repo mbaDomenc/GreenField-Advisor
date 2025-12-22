@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Brain, CheckCircle, Leaf, ArrowLeft } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Brain, ArrowLeft, RefreshCw } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 import AIIrrigationCard from '../components/AIIrrigationCard';
 
-// UTILIZZO DI UNA SOLA FONTE PER LA TEMPERATURA: weatherMap
 function getPlaceholderImage(plant) {
   const q = encodeURIComponent(plant?.species || plant?.name || 'plant');
   return `https://source.unsplash.com/featured/800x450?${q},garden,botany`;
@@ -12,53 +11,32 @@ function getPlaceholderImage(plant) {
 const AIIrrigationPage = ({ onBack }) => {
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
+  
   const [loadingPlants, setLoadingPlants] = useState(new Set());
   const [recommendations, setRecommendations] = useState({});
   const [weatherMap, setWeatherMap] = useState({});
   const [error, setError] = useState(null);
 
-  useEffect(() => { loadPlants(); }, []);
-
-  const loadPlants = async () => {
-    setError(null);
-    setPlants([]);
-    setRecommendations({});
-    setWeatherMap({});
-    setLoading(true);
-    try {
-      const { data } = await api.get('/api/piante');
-      setPlants(data || []);
-      data.forEach(plant => {
-        askForAdvice(plant);
-        fetchPlantWeather(plant);
-      });
-    } catch (err) {
-      setError('Errore nel caricamento delle piante');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const askForAdvice = async (plant) => {
+  // 1. CHIAMATA AI
+  const askForAdvice = useCallback(async (plant) => {
     if (!plant?.id) return;
     setLoadingPlants(prev => new Set([...prev, plant.id]));
     try {
       const { data } = await api.post(`/api/piante/${plant.id}/ai/irrigazione`, {});
       setRecommendations(prev => ({ ...prev, [plant.id]: data }));
     } catch (err) {
-      setRecommendations(prev => ({
-        ...prev,
-        [plant.id]: { error: 'Errore nel calcolo AI/meteo' }
+      console.error("Errore AI", err);
+      setRecommendations(prev => ({ 
+        ...prev, 
+        [plant.id]: { error: 'Analisi fallita. Riprova.' } 
       }));
     } finally {
-      setLoadingPlants(prev => {
-        const s = new Set(prev); s.delete(plant.id); return s;
-      });
+      setLoadingPlants(prev => { const s = new Set(prev); s.delete(plant.id); return s; });
     }
-  };
+  }, []);
 
-  // Meteo reale per ogni pianta
-  const fetchPlantWeather = async (plant) => {
+  // 2. METEO LIVE
+  const fetchPlantWeather = useCallback(async (plant) => {
     if (!plant) return;
     try {
       let url = null;
@@ -70,99 +48,95 @@ const AIIrrigationPage = ({ onBack }) => {
       if (!url) return;
       const { data } = await api.get(url);
       setWeatherMap(prev => ({ ...prev, [plant.id]: data }));
-    } catch {/* handled as loading or fallback in card */}
+    } catch (e) {
+      console.error("Errore meteo", e);
+    }
+  }, []);
+
+  // 3. CARICAMENTO INIZIALE
+  const loadPlants = useCallback(async () => {
+    setError(null);
+    if (plants.length === 0) setLoading(true);
+    try {
+      const { data } = await api.get('/api/piante/'); 
+      setPlants(data || []);
+      data.forEach(p => fetchPlantWeather(p));
+    } catch (err) {
+      console.error("Errore caricamento piante:", err);
+      setError('Errore caricamento dati.');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchPlantWeather]);
+
+  useEffect(() => { loadPlants(); }, [loadPlants]);
+
+  const handleLogIrrigation = async (plant) => {
+    await new Promise(r => setTimeout(r, 500)); 
+    await loadPlants(); 
+    await askForAdvice(plant);
   };
-
-  const handleLogIrrigation = (plant) => {
-    alert(`Registra irrigazione per ${plant.name} (TODO: apri modal interventi)`);
-  };
-
-  const refreshWeather = (plant) => {
-    askForAdvice(plant);
-    fetchPlantWeather(plant);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-green-50 pt-16">
-        <div className="w-full max-w-screen-2xl xl:px-32 lg:px-12 md:px-8 sm:px-6 px-4 py-8 mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-green-50 pt-16">
-        <div className="w-full max-w-screen-2xl xl:px-32 lg:px-12 md:px-8 sm:px-6 px-4 py-8 mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-600">{error}</p>
-            <button
-              onClick={loadPlants}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Riprova
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-green-50 pt-16">
       <div className="w-full max-w-screen-2xl xl:px-32 lg:px-12 md:px-8 sm:px-6 px-4 py-8 mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-6">
+        
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
             {onBack && (
-              <button onClick={onBack} className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+              <button onClick={onBack} className="p-2 bg-white rounded-full shadow-sm text-gray-600 hover:text-green-700">
                 <ArrowLeft className="h-5 w-5" />
-                <span>Indietro</span>
               </button>
             )}
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-700 p-3 rounded-xl shadow-lg">
                 <Brain className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  AI Tools → Assistente Coltivazione
-                </h1>
-                <p className="text-gray-600">
-                  Analisi completa: Irrigazione, Concimazione, Fabbisogno del suolo e Salute della pianta.
-                </p>
+                <h1 className="text-3xl font-bold text-gray-900">AI Advisor</h1>
+                <p className="text-gray-600 text-sm">Analisi predittiva e monitoraggio intelligente.</p>
               </div>
             </div>
           </div>
+          <button onClick={loadPlants} className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> Aggiorna Dati
+          </button>
         </div>
 
-        {/* Plants */}
-        {plants.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="bg-white rounded-xl shadow-lg p-12 max-w-md mx-auto">
-              <div className="bg-blue-100 p-4 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-                <Leaf className="h-10 w-10 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                Nessuna pianta disponibile
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Aggiungi delle piante per ottenere consigli AI personalizzati.
-              </p>
-            </div>
-          </div>
+        {/* LISTA */}
+        {loading && plants.length === 0 ? (
+           <div className="text-center py-12 text-green-700 animate-pulse">Caricamento serra...</div>
+        ) : error ? (
+           <div className="text-center py-12 text-red-500">{error}</div>
+        ) : plants.length === 0 ? (
+           <div className="text-center py-12 text-gray-500">Nessuna pianta trovata.</div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {plants.map((plant) => {
               const img = plant.imageUrl || plant.trefleImageUrl || getPlaceholderImage(plant);
               const rec = recommendations[plant.id];
-              const weather = weatherMap[plant.id] && typeof weatherMap[plant.id].temp === "number"
-                ? weatherMap[plant.id]
-                : null;
+              
+              // Dati meteo live
+              const wLive = weatherMap[plant.id] || {};
+              // Dati salvati nella pianta (come fallback)
+              const wInternal = plant.weather_data || {};
+
+              // Costruiamo un oggetto meteo che la Card sappia leggere
+              const displayWeather = {
+                ...wInternal,
+                ...wLive, // Sovrascrive con i dati live se presenti
+                
+                // --- FIX SOLARE ---
+                // Cerca 'solarRadiation' (se presente) OPPURE 'solar_rad' (formato API Live)
+                solarRadiation: wLive.solarRadiation ?? wLive.solar_rad ?? wInternal.solar_rad ?? wInternal.solarRadiation,
+                
+                et0: wLive.et0 ?? wInternal.et0,
+                soilHumidity: wLive.soil_moisture ?? wInternal.soil_moisture ?? wInternal.soilHumidity,
+                
+                // Pioggia
+                rainNext24h: wLive.rainNext24h ?? 0,
+                rain_trend: wLive.rain_trend || wInternal.rain_trend || []
+              };
 
               return (
                 <AIIrrigationCard
@@ -171,39 +145,15 @@ const AIIrrigationPage = ({ onBack }) => {
                   imageUrl={img}
                   loadingExternal={loadingPlants.has(plant.id)}
                   recommendation={rec}
+                  weather={displayWeather}
                   onAskAdvice={() => askForAdvice(plant)}
-                  onRefreshWeather={() => refreshWeather(plant)}
+                  onRefreshWeather={() => fetchPlantWeather(plant)}
                   onLogIrrigation={() => handleLogIrrigation(plant)}
-                  weather={weather}
                 />
               );
             })}
           </div>
         )}
-
-        <div className="mt-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-8 text-center">
-          <Brain className="h-12 w-12 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-4">
-            Assistente Virtuale Completo
-          </h2>
-          <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-            Il nostro sistema analizza il meteo in tempo reale, il tipo di terreno e le necessità specifiche della specie per ottimizzare ogni aspetto della cura.
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 text-sm">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5" />
-              <span>Irrigazione Intelligente</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5" />
-              <span>Piani Concimazione</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5" />
-              <span>Diagnosi Salute (Visione)</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

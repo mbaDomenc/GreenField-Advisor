@@ -10,7 +10,10 @@ import {
   Camera,
   Trash2,
   Pencil,
-  FlaskConical 
+  FlaskConical,
+  AlertTriangle,
+  CheckCircle,
+  X 
 } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 import PlantFormModal from '../components/PlantFormModal';
@@ -20,32 +23,42 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
   const [loading, setLoading] = useState(true);
   const [uploadingImg, setUploadingImg] = useState(false);
   const [error, setError] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  
+  
+  const [modalOpen, setModalOpen] = useState(false); 
+  
+  // --- STATI PER MODIFICA NOME (Esclusiva) ---
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [newName, setNewName] = useState('');
+  // -------------------------------------------
+
   const [recentInterventions, setRecentInterventions] = useState([]);
+  
+  // Refs
   const fileRef = useRef(null);
+  const recheckFileRef = useRef(null);
 
   // Modali Interventi
   const [showIrrigModal, setShowIrrigModal] = useState(false);
   const [showFertModal, setShowFertModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
 
-
   function getLocalDatetimePlus2H() {
-  const now = new Date();
-  now.setHours(now.getHours() + 2);
-  const iso = now.toISOString();
-  return iso.slice(0, 16); // 'YYYY-MM-DDTHH:mm'
-}
+    const now = new Date();
+    now.setHours(now.getHours() + 2);
+    const iso = now.toISOString();
+    return iso.slice(0, 16);
+  }
 
   // Form stati
   const [irrigForm, setIrrigForm] = useState({
     liters: '',
-    executedAt: getLocalDatetimePlus2H(), // datetime-local
+    executedAt: getLocalDatetimePlus2H(),
     notes: '',
   });
 
   const [fertForm, setFertForm] = useState({
-    status: 'done', // 'done' | 'planned'
+    status: 'done',
     fertilizerType: '',
     dose: '',
     executedAt: getLocalDatetimePlus2H(),
@@ -54,13 +67,12 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
   });
 
   const [planForm, setPlanForm] = useState({
-    type: 'irrigazione', // irrigazione | concimazione | potatura | altro
+    type: 'irrigazione',
     plannedAt: getLocalDatetimePlus2H(),
     notes: '',
   });
 
-  //Helpers
-
+  // Helpers
   const asISO = (val) => {
     if (!val) return null;
     try {
@@ -72,7 +84,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     }
   };
 
-  // Normalizza un intervento
   const normalizeIntervention = (raw) => ({
     id: raw?.id ?? raw?._id ?? null,
     type: raw?.type ?? null,
@@ -86,7 +97,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     createdAt: asISO(raw?.createdAt ?? raw?.created_at ?? raw?.date ?? null),
   });
 
-  // Data da mostrare: eseguito -> pianificato -> creato
   const getInterventionDate = (i) =>
     i?.executedAt || i?.plannedAt || i?.createdAt || null;
 
@@ -108,28 +118,24 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
       : 'Non disponibile';
 
   const formatDateTime = (dateString) => {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  const offset = new Date(date.getTime() + 2 * 60 * 60 * 1000);
-  return offset.toLocaleString('it-IT', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    const offset = new Date(date.getTime() + 2 * 60 * 60 * 1000);
+    return offset.toLocaleString('it-IT', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   const getInterventionIcon = (type) => {
     switch (type) {
-      case 'irrigazione':
-        return <Droplets className="h-4 w-4 text-blue-600" />;
-      case 'concimazione':
-        return <FlaskConical className="h-4 w-4 text-amber-600" />;
-      case 'potatura':
-        return <Edit className="h-4 w-4 text-orange-600" />;
-      default:
-        return <Calendar className="h-4 w-4 text-gray-600" />;
+      case 'irrigazione': return <Droplets className="h-4 w-4 text-blue-600" />;
+      case 'concimazione': return <FlaskConical className="h-4 w-4 text-amber-600" />;
+      case 'potatura': return <Edit className="h-4 w-4 text-orange-600" />;
+      default: return <Calendar className="h-4 w-4 text-gray-600" />;
     }
   };
 
@@ -140,17 +146,20 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
       pending: 'bg-gray-100 text-gray-800',
     };
     return (
-      <span
-        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-          map[status] || 'bg-gray-100 text-gray-800'
-        }`}
-      >
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-800'}`}>
         {status || 'n/d'}
       </span>
     );
   };
 
-  // Upload Immagine
+  // LOGICA SALUTE
+  const isPlantHealthy = (status) => {
+    if (!status) return false;
+    const s = status.toLowerCase();
+    return s.includes('healthy') || s.includes('sana');
+  };
+
+  // Upload Immagine (Header)
   const onClickChangePhoto = () => fileRef.current?.click();
 
   const onFileSelected = async (e) => {
@@ -171,13 +180,47 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
         ...p,
         imageUrl: data.imageUrl,
         imageThumbUrl: data.imageThumbUrl,
+        healthStatus: data.healthStatus,
+        healthAdvice: data.healthAdvice,
       }));
     } catch (err) {
       console.error('Upload image error', err);
       alert('Errore nel caricamento immagine');
     } finally {
       setUploadingImg(false);
-      e.target.value = ''; // reset input
+      e.target.value = ''; 
+    }
+  };
+
+  // Upload Immagine (Ricontrollo Salute)
+  const onHealthCheckFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return alert('Seleziona un file immagine');
+    if (file.size > 8 * 1024 * 1024) return alert('Max 8MB');
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      setUploadingImg(true);
+      const { data } = await api.post(`/api/piante/${plantId}/image`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setPlant((p) => ({
+        ...p,
+        imageUrl: data.imageUrl,
+        imageThumbUrl: data.imageThumbUrl,
+        healthStatus: data.healthStatus,
+        healthAdvice: data.healthAdvice,
+      }));
+      alert("Nuova analisi salute completata!");
+    } catch (err) {
+      console.error('Check image error', err);
+      alert('Errore nell\'analisi della pianta');
+    } finally {
+      setUploadingImg(false);
+      e.target.value = '';
     }
   };
 
@@ -210,15 +253,12 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
       const { data } = await api.get(`/api/piante/${plantId}/interventi`, {
         params: { limit: 3 }, 
       });
-
-      // Normalizza e ordina (executedAt -> plannedAt -> createdAt)
       const normalized = (Array.isArray(data) ? data : []).map(normalizeIntervention);
       const ordered = normalized.sort((a, b) => {
         const da = new Date(getInterventionDate(a) || 0).getTime();
         const db = new Date(getInterventionDate(b) || 0).getTime();
         return db - da;
       });
-
       setRecentInterventions(ordered);
     } catch (e) {
       console.error('Errore fetch interventi:', e);
@@ -244,7 +284,27 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     if (plantId) loadPlantDetail();
   }, [plantId]);
 
-  // Modifica / Elimina Pianta
+  // --- LOGICA MODIFICA NOME ---
+  const openRenameModal = () => {
+    setNewName(plant.name || '');
+    setShowRenameModal(true);
+  };
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) return alert("Il nome non può essere vuoto");
+    try {
+      // Invia solo il campo 'name'
+      const { data: updated } = await api.patch(`/api/piante/${plantId}`, { name: newName });
+      setPlant(updated);
+      setShowRenameModal(false);
+    } catch (error) {
+      console.error("Errore aggiornamento nome:", error);
+      alert("Errore nel salvataggio del nome");
+    }
+  };
+  // -----------------------------
+
+  
   const handleFormSubmit = async (formData) => {
     try {
       const { data: updated } = await api.patch(`/api/piante/${plantId}`, formData);
@@ -267,75 +327,31 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
     }
   };
 
-  // HANDLERS Interventi
-
+  // HANDLERS Interventi (invariati)
   const handleAddIrrigation = async () => {
     const litersNum = Number(irrigForm.liters);
     if (!litersNum || litersNum <= 0) return alert('Inserisci litri validi (> 0)');
-
-    const payload = {
-      type: 'irrigazione',
-      status: 'done',
-      liters: litersNum,
-      executedAt: toISO(irrigForm.executedAt),
-      notes: irrigForm.notes || undefined,
-    };
-
-    try {
-      await api.post(`/api/piante/${plantId}/interventi`, payload);
-      setShowIrrigModal(false);
-      await Promise.all([fetchPlant(), fetchInterventions()]);
-    } catch (e) {
-      console.error('Errore irrigazione:', e);
-      alert('Errore nel salvataggio irrigazione');
-    }
+    const payload = { type: 'irrigazione', status: 'done', liters: litersNum, executedAt: toISO(irrigForm.executedAt), notes: irrigForm.notes || undefined };
+    try { await api.post(`/api/piante/${plantId}/interventi`, payload); setShowIrrigModal(false); await Promise.all([fetchPlant(), fetchInterventions()]); } 
+    catch (e) { console.error('Errore irrigazione:', e); alert('Errore nel salvataggio irrigazione'); }
   };
 
   const handleAddFertilization = async () => {
     const isPlanned = fertForm.status === 'planned';
     const doseVal = fertForm.dose?.toString().trim();
     const fertTypeVal = fertForm.fertilizerType?.trim();
-
     if (!fertTypeVal) return alert('Specifica il tipo di concime');
     if (!doseVal) return alert('Specifica la dose');
-
-    const payload = {
-      type: 'concimazione',
-      status: fertForm.status,
-      fertilizerType: fertTypeVal,
-      dose: doseVal,
-      notes: fertForm.notes || undefined,
-      executedAt: isPlanned ? undefined : toISO(fertForm.executedAt),
-      plannedAt: isPlanned ? toISO(fertForm.plannedAt) : undefined,
-    };
-
-    try {
-      await api.post(`/api/piante/${plantId}/interventi`, payload);
-      setShowFertModal(false);
-      await Promise.all([fetchPlant(), fetchInterventions()]);
-    } catch (e) {
-      console.error('Errore concimazione:', e);
-      alert('Errore nel salvataggio concimazione');
-    }
+    const payload = { type: 'concimazione', status: fertForm.status, fertilizerType: fertTypeVal, dose: doseVal, notes: fertForm.notes || undefined, executedAt: isPlanned ? undefined : toISO(fertForm.executedAt), plannedAt: isPlanned ? toISO(fertForm.plannedAt) : undefined };
+    try { await api.post(`/api/piante/${plantId}/interventi`, payload); setShowFertModal(false); await Promise.all([fetchPlant(), fetchInterventions()]); } 
+    catch (e) { console.error('Errore concimazione:', e); alert('Errore nel salvataggio concimazione'); }
   };
 
   const handlePlanIntervention = async () => {
     const type = planForm.type || 'altro';
-    const payload = {
-      type,
-      status: 'planned',
-      plannedAt: toISO(planForm.plannedAt),
-      notes: planForm.notes || undefined,
-    };
-
-    try {
-      await api.post(`/api/piante/${plantId}/interventi`, payload);
-      setShowPlanModal(false);
-      await Promise.all([fetchPlant(), fetchInterventions()]);
-    } catch (e) {
-      console.error('Errore pianificazione:', e);
-      alert('Errore nella pianificazione intervento');
-    }
+    const payload = { type, status: 'planned', plannedAt: toISO(planForm.plannedAt), notes: planForm.notes || undefined };
+    try { await api.post(`/api/piante/${plantId}/interventi`, payload); setShowPlanModal(false); await Promise.all([fetchPlant(), fetchInterventions()]); } 
+    catch (e) { console.error('Errore pianificazione:', e); alert('Errore nella pianificazione intervento'); }
   };
 
   // Views
@@ -357,12 +373,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <p className="text-red-600">{error || 'Pianta non trovata'}</p>
-            <button
-              onClick={onBack}
-              className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              Torna alla lista
-            </button>
+            <button onClick={onBack} className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Torna alla lista</button>
           </div>
         </div>
       </div>
@@ -374,7 +385,8 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
   return (
     <div className="min-h-screen bg-green-50 pt-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* HERO IMMAGINE (3:2, overlay info, bottoni) */}
+        
+        {/* HERO IMMAGINE */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
           <div className="relative w-full pt-[66.66%] bg-neutral-100">
             {plant.imageUrl || plant.imageThumbUrl ? (
@@ -398,8 +410,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                 </div>
               </div>
             )}
-
-            {/* Box info */}
+            
             <div className="absolute left-4 bottom-4 right-4 sm:left-6 sm:right-auto sm.max-w-[520px]">
               <div className="bg-white/95 rounded-xl shadow-md px-4 py-3">
                 <div className="flex items-center gap-3 flex-wrap min-w-0">
@@ -419,7 +430,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
               </div>
             </div>
 
-            {/* Spinner upload */}
             {uploadingImg && (
               <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
                 <div className="rounded-full h-12 w-12 border-2 border-white border-t-transparent animate-spin" />
@@ -427,64 +437,94 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
             )}
           </div>
 
-          {/* Toolbar sotto immagine */}
+          {/* TOOLBAR */}
           <div className="px-4 sm:px-6 py-2 border-t border-gray-100 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60">
             <div className="flex items-center gap-2">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={onFileSelected}
-              />
-
-              <button
-                onClick={onClickChangePhoto}
-                disabled={uploadingImg}
-                className={`inline-flex items-center gap-1.5 text-xs text-gray-700
-                            px-2 py-1 rounded-md border border-gray-200
-                            hover:bg-gray-50 transition-colors ${btnDisabledClass}`}
-                title="Cambia foto"
-              >
-                <Camera className="h-3.5 w-3.5" />
-                <span>{uploadingImg ? 'Caricamento…' : 'Cambia'}</span>
-              </button>
-
-              {plant.imageUrl && (
-                <button
-                  onClick={onRemovePhoto}
-                  disabled={uploadingImg}
-                  className={`inline-flex items-center gap-1.5 text-xs text-red-600
-                              px-2 py-1 rounded-md border border-red-200
-                              hover:bg-red-50 transition-colors ${btnDisabledClass}`}
-                  title="Rimuovi foto"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Rimuovi</span>
-                </button>
-              )}
-
-              <button
-                onClick={() => setModalOpen(true)}
-                className="ml-auto inline-flex items-center gap-1.5 text-xs text-gray-700
-                           px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50"
-                title="Modifica dettagli"
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFileSelected} />
+              
+              {/* Tasto Modifica (ALLINEATO A SINISTRA) */}
+              
+              <button 
+                onClick={openRenameModal} 
+                className="inline-flex items-center gap-1.5 text-xs text-gray-700 px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors" 
+                title="Modifica nome pianta"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                <span>Modifica</span>
+                <span>Modifica nome</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/*CONTENUTO */}
+        {/* CONTENUTO */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Colonna principale */}
           <div className="lg:col-span-2 space-y-8">
+
+            {/* --- BLOCCHI DIAGNOSI SALUTE --- */}
+            {plant.healthStatus && !isPlantHealthy(plant.healthStatus) && (
+              <div className="bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="bg-red-100 p-3 rounded-full flex-shrink-0">
+                    <AlertTriangle className="h-8 w-8 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-red-800 mb-2">
+                      Attenzione: Patologia Rilevata
+                    </h2>
+                    <p className="font-semibold text-red-700 mb-1 text-lg">
+                      {plant.healthStatus.replace(/___/g, " ").replace(/_/g, " ")}
+                    </p>
+                    <p className="text-red-800/80 mb-4 italic">
+                      {plant.healthAdvice || "Si consiglia di controllare la pianta."}
+                    </p>
+                    
+                    <div className="bg-white/60 rounded-lg p-4 border border-red-100">
+                      <p className="text-sm text-gray-700 mb-3 font-medium">
+                        Dopo aver applicato il trattamento consigliato, carica una nuova foto per verificare i progressi e aggiornare lo stato di salute della pianta.
+                      </p>
+                      
+                      <input ref={recheckFileRef} type="file" accept="image/*" className="hidden" onChange={onHealthCheckFileSelected} />
+                      
+                      <button onClick={() => recheckFileRef.current?.click()} disabled={uploadingImg} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm text-sm font-semibold">
+                        {uploadingImg ? (
+                          <>
+                            <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"/>
+                            Analisi in corso...
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="h-4 w-4" />
+                            Scatta/Carica nuova foto e analizza
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {plant.healthStatus && isPlantHealthy(plant.healthStatus) && (
+              <div className="bg-green-50 border-l-4 border-green-500 rounded-r-xl shadow-sm p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-green-100 p-3 rounded-full flex-shrink-0">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-green-800">
+                      Ottime notizie: Pianta Sana
+                    </h2>
+                    <p className="text-green-700 mt-1">
+                      La pianta appare in buona salute. Continua con le cure attuali!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Stato e parametri */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Stato e Parametri</h2>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
@@ -494,7 +534,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                       <p className="font-semibold">{plant.wateringIntervalDays} giorni</p>
                     </div>
                   </div>
-
                   <div className="flex items-center space-x-3">
                     <Clock className="h-5 w-5 text-gray-600" />
                     <div>
@@ -503,7 +542,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <Sun className="h-5 w-5 text-yellow-600" />
@@ -512,7 +550,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                       <p className="font-semibold capitalize">{plant.sunlight}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center space-x-3">
                     <Leaf className="h-5 w-5 text-green-600" />
                     <div>
@@ -527,7 +564,6 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
             {/* Interventi recenti */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Interventi Recenti</h2>
-
               {recentInterventions.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -536,46 +572,22 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
               ) : (
                 <div className="space-y-4">
                   {recentInterventions.map((it, index) => (
-                    <div
-                      key={it.id || it._id || index}
-                      className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg"
-                    >
+                    <div key={it.id || it._id || index} className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg">
                       <div className="flex-shrink-0">{getInterventionIcon(it.type)}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-2 min-w-0">
-                            <h4 className="font-medium text-gray-900 capitalize truncate">
-                              {it.type}
-                            </h4>
+                            <h4 className="font-medium text-gray-900 capitalize truncate">{it.type}</h4>
                             {statusChip(it.status)}
                           </div>
-                          <span className="text-sm text-gray-500 whitespace-nowrap">
-                            {formatDateTime(getInterventionDate(it))}
-                          </span>
+                          <span className="text-sm text-gray-500 whitespace-nowrap">{formatDateTime(getInterventionDate(it))}</span>
                         </div>
-
-                        {/* Dettagli rapidi */}
                         <div className="mt-1 text-xs text-gray-600 space-x-3">
-                          {it.liters ? (
-                            <span>
-                              Litri: <b>{it.liters}</b>
-                            </span>
-                          ) : null}
-                          {it.fertilizerType ? (
-                            <span>
-                              Concime: <b>{it.fertilizerType}</b>
-                            </span>
-                          ) : null}
-                          {it.dose ? (
-                            <span>
-                              Dose: <b>{it.dose}</b>
-                            </span>
-                          ) : null}
+                          {it.liters ? <span>Litri: <b>{it.liters}</b></span> : null}
+                          {it.fertilizerType ? <span>Concime: <b>{it.fertilizerType}</b></span> : null}
+                          {it.dose ? <span>Dose: <b>{it.dose}</b></span> : null}
                         </div>
-
-                        {it.notes && (
-                          <p className="text-sm text-gray-700 mt-1">{it.notes}</p>
-                        )}
+                        {it.notes && <p className="text-sm text-gray-700 mt-1">{it.notes}</p>}
                       </div>
                     </div>
                   ))}
@@ -586,10 +598,8 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Info generali */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Informazioni</h3>
-
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Data creazione</p>
@@ -598,52 +608,54 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
               </div>
             </div>
 
-            {/* Azioni rapide */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Azioni Rapide</h3>
-
               <div className="space-y-3">
-                <button
-                  onClick={() => setShowIrrigModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 border border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                >
+                <button onClick={() => setShowIrrigModal(true)} className="w-full flex items-center space-x-3 p-3 border border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors">
                   <Droplets className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">
-                    Registra Irrigazione
-                  </span>
+                  <span className="text-sm font-medium text-gray-700">Registra Irrigazione</span>
                 </button>
-
-                <button
-                  onClick={() => setShowFertModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 border border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors"
-                >
+                <button onClick={() => setShowFertModal(true)} className="w-full flex items-center space-x-3 p-3 border border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors">
                   <FlaskConical className="h-5 w-5 text-amber-600" />
-                  <span className="text-sm font-medium text-gray-700">
-                    Registra Concimazione
-                  </span>
+                  <span className="text-sm font-medium text-gray-700">Registra Concimazione</span>
                 </button>
-
-                <button
-                  onClick={() => setShowPlanModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 border border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors"
-                >
+                <button onClick={() => setShowPlanModal(true)} className="w-full flex items-center space-x-3 p-3 border border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors">
                   <Calendar className="h-5 w-5 text-purple-600" />
-                  <span className="text-sm font-medium text-gray-700">
-                    Pianifica Intervento
-                  </span>
+                  <span className="text-sm font-medium text-gray-700">Pianifica Intervento</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Modal Modifica Pianta */}
-        <PlantFormModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          initialData={plant}
-          onSubmit={handleFormSubmit}
-        />
+        {/* MODALE SPECIFICO: "SOLO NOME" */}
+        {showRenameModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-bold">Modifica Nome</h3>
+                <button onClick={() => setShowRenameModal(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nome della pianta</label>
+                <input 
+                  type="text" 
+                  value={newName} 
+                  onChange={(e) => setNewName(e.target.value)} 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  placeholder="Inserisci nuovo nome"
+                  autoFocus
+                />
+              </div>
+              <div className="p-4 border-t flex justify-end gap-3">
+                <button onClick={() => setShowRenameModal(false)} className="px-4 py-2 border rounded-lg text-sm">Annulla</button>
+                <button onClick={handleSaveName} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">Salva</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* MODAL: Irrigazione  */}
         {showIrrigModal && (
@@ -655,55 +667,20 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
               <div className="p-4 space-y-4">
                 <div>
                   <label className="block text-sm mb-1">Litri</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={irrigForm.liters}
-                    onChange={(e) =>
-                      setIrrigForm({ ...irrigForm, liters: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="Es. 1.5"
-                  />
+                  <input type="number" min="0" step="0.1" value={irrigForm.liters} onChange={(e) => setIrrigForm({ ...irrigForm, liters: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Es. 1.5" />
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Data/ora (eseguito)</label>
-                  <input
-                    type="datetime-local"
-                    value={irrigForm.executedAt}
-                    onChange={(e) =>
-                      setIrrigForm({ ...irrigForm, executedAt: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                  />
+                  <input type="datetime-local" value={irrigForm.executedAt} onChange={(e) => setIrrigForm({ ...irrigForm, executedAt: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Note (opzionale)</label>
-                  <textarea
-                    rows={2}
-                    value={irrigForm.notes}
-                    onChange={(e) =>
-                      setIrrigForm({ ...irrigForm, notes: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
-                    placeholder="Note sull'irrigazione..."
-                  />
+                  <textarea rows={2} value={irrigForm.notes} onChange={(e) => setIrrigForm({ ...irrigForm, notes: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 resize-none" placeholder="Note sull'irrigazione..." />
                 </div>
               </div>
               <div className="p-4 border-t flex justify-end gap-3">
-                <button
-                  onClick={() => setShowIrrigModal(false)}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={handleAddIrrigation}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Salva
-                </button>
+                <button onClick={() => setShowIrrigModal(false)} className="px-4 py-2 border rounded-lg">Annulla</button>
+                <button onClick={handleAddIrrigation} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Salva</button>
               </div>
             </div>
           </div>
@@ -720,98 +697,41 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm mb-1">Stato</label>
-                    <select
-                      value={fertForm.status}
-                      onChange={(e) =>
-                        setFertForm({ ...fertForm, status: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    >
+                    <select value={fertForm.status} onChange={(e) => setFertForm({ ...fertForm, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500">
                       <option value="done">Eseguita</option>
                       <option value="planned">Pianificata</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm mb-1">Tipo concime</label>
-                    <input
-                      type="text"
-                      value={fertForm.fertilizerType}
-                      onChange={(e) =>
-                        setFertForm({
-                          ...fertForm,
-                          fertilizerType: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                      placeholder="Es. NPK 20-20-20"
-                    />
+                    <input type="text" value={fertForm.fertilizerType} onChange={(e) => setFertForm({ ...fertForm, fertilizerType: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Es. NPK 20-20-20" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm mb-1">Dose</label>
-                    <input
-                      type="text"
-                      value={fertForm.dose}
-                      onChange={(e) =>
-                        setFertForm({ ...fertForm, dose: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                      placeholder="Es. 5ml/L"
-                    />
+                    <input type="text" value={fertForm.dose} onChange={(e) => setFertForm({ ...fertForm, dose: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Es. 5ml/L" />
                   </div>
                   {fertForm.status === 'done' ? (
                     <div>
                       <label className="block text-sm mb-1">Eseguita alle</label>
-                      <input
-                        type="datetime-local"
-                        value={fertForm.executedAt}
-                        onChange={(e) =>
-                          setFertForm({ ...fertForm, executedAt: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                      />
+                      <input type="datetime-local" value={fertForm.executedAt} onChange={(e) => setFertForm({ ...fertForm, executedAt: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
                     </div>
                   ) : (
                     <div>
                       <label className="block text-sm mb-1">Pianificata per</label>
-                      <input
-                        type="datetime-local"
-                        value={fertForm.plannedAt}
-                        onChange={(e) =>
-                          setFertForm({ ...fertForm, plannedAt: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                      />
+                      <input type="datetime-local" value={fertForm.plannedAt} onChange={(e) => setFertForm({ ...fertForm, plannedAt: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
                     </div>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Note (opzionale)</label>
-                  <textarea
-                    rows={2}
-                    value={fertForm.notes}
-                    onChange={(e) =>
-                      setFertForm({ ...fertForm, notes: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
-                    placeholder="Note sulla concimazione..."
-                  />
+                  <textarea rows={2} value={fertForm.notes} onChange={(e) => setFertForm({ ...fertForm, notes: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 resize-none" placeholder="Note sulla concimazione..." />
                 </div>
               </div>
               <div className="p-4 border-t flex justify-end gap-3">
-                <button
-                  onClick={() => setShowFertModal(false)}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={handleAddFertilization}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Salva
-                </button>
+                <button onClick={() => setShowFertModal(false)} className="px-4 py-2 border rounded-lg">Annulla</button>
+                <button onClick={handleAddFertilization} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Salva</button>
               </div>
             </div>
           </div>
@@ -828,13 +748,7 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm mb-1">Tipo</label>
-                    <select
-                      value={planForm.type}
-                      onChange={(e) =>
-                        setPlanForm({ ...planForm, type: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    >
+                    <select value={planForm.type} onChange={(e) => setPlanForm({ ...planForm, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500">
                       <option value="irrigazione">Irrigazione</option>
                       <option value="concimazione">Concimazione</option>
                       <option value="potatura">Potatura</option>
@@ -843,42 +757,17 @@ const PlantDetail = ({ plantId, onBack, onDeleted }) => {
                   </div>
                   <div>
                     <label className="block text-sm mb-1">Data/ora</label>
-                    <input
-                      type="datetime-local"
-                      value={planForm.plannedAt}
-                      onChange={(e) =>
-                        setPlanForm({ ...planForm, plannedAt: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
+                    <input type="datetime-local" value={planForm.plannedAt} onChange={(e) => setPlanForm({ ...planForm, plannedAt: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Note (opzionale)</label>
-                  <textarea
-                    rows={2}
-                    value={planForm.notes}
-                    onChange={(e) =>
-                      setPlanForm({ ...planForm, notes: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 resize-none"
-                    placeholder="Dettagli dell'intervento..."
-                  />
+                  <textarea rows={2} value={planForm.notes} onChange={(e) => setPlanForm({ ...planForm, notes: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 resize-none" placeholder="Dettagli dell'intervento..." />
                 </div>
               </div>
               <div className="p-4 border-t flex justify-end gap-3">
-                <button
-                  onClick={() => setShowPlanModal(false)}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={handlePlanIntervention}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Pianifica
-                </button>
+                <button onClick={() => setShowPlanModal(false)} className="px-4 py-2 border rounded-lg">Annulla</button>
+                <button onClick={handlePlanIntervention} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Pianifica</button>
               </div>
             </div>
           </div>
