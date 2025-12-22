@@ -10,7 +10,7 @@ from models.interventionModel import (
 interventions_collection = db["interventi"]
 plants_collection = db["piante"]
 
-# Valori ammessi estendibili
+# Valori ammessi 
 ALLOWED_TYPES = {"irrigazione", "concimazione", "potatura", "altro"}
 ALLOWED_STATUS = {"done", "planned", "skipped", "canceled"}
 

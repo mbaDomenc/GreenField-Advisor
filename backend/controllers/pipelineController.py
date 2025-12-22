@@ -39,7 +39,6 @@ class PipelineController:
             #INIEZIONE DEL TERRENO
             if request.soil_type:
                 sensor_data["soil"] = request.soil_type.lower() 
-                # Iniettiamo anche il tipo pianta nei dati sensore per l'ActionGenerator
                 sensor_data["plant_type"] = request.plant_type
             
             # 3. Esecuzione Pipeline
