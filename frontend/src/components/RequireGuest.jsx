@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 export default function RequireGuest({ children, redirectTo = '/dashboard', showAlert = true }) {
   const { isAuthenticated, loading } = useAuth();
 
-  // Teniamo traccia del valore precedente di isAuthenticated
+  // Si tiene traccia del valore precedente di isAuthenticated
   const prevAuthRef = useRef(isAuthenticated);
   const prevAuth = prevAuthRef.current;
 

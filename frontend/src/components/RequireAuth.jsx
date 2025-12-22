@@ -16,7 +16,7 @@ function RedirectWithAlert({ message, to = '/', replace = true }) {
 export default function RequireAuth({ children, roles, redirectIfNotAuth = '/login', redirectIfForbidden = '/' }) {
   const { isAuthenticated, loading, user } = useAuth();
 
-  //Mostra spinner mentre sta caricando il token
+  // Mostra spinner mentre sta caricando il token
   if (loading) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
@@ -25,7 +25,7 @@ export default function RequireAuth({ children, roles, redirectIfNotAuth = '/log
     );
   }
 
-  //Solo DOPO il loading, controlla se NON autenticato
+  // Solo DOPO il loading, controlla se NON autenticato
   if (!isAuthenticated) {
     return (
       <RedirectWithAlert

@@ -27,11 +27,8 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    
-    // Barra fissa in alto, tutta larghezza, sfondo bianco semitrasparente
+    // Barra fissa in alto
     const navClasses = "absolute top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-emerald-100 shadow-sm h-20";
-    
-    // Contenitore interno centrato standard
     const containerClasses = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between";
 
     const linkBase = "relative font-medium text-gray-600 hover:text-emerald-600 transition-colors px-3 py-2 rounded-lg hover:bg-emerald-50";
@@ -40,9 +37,9 @@ export default function Navbar() {
     const btnPrimary = "bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-200 flex items-center gap-2";
     const btnGhost = "border border-emerald-200 text-emerald-700 px-5 py-2.5 rounded-lg font-semibold hover:bg-emerald-50 transition-colors";
 
-    const dropPanel = "absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-emerald-100 overflow-hidden p-2 animate-in fade-in slide-in-from-top-2 duration-200";
-    const dropItem = "block px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors";
-
+    const dropPanel = "absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-emerald-100 overflow-hidden p-2 animate-in fade-in slide-in-from-top-2 duration-200";
+    const dropItem = "block px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors whitespace-nowrap";
+ 
     const handleLogout = async () => {
         await logout();
         navigate('/', { replace: true });
@@ -82,6 +79,7 @@ export default function Navbar() {
                                     <div className={dropPanel}>
                                         <div className="px-4 py-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">Il tuo giardino</div>
                                         <Link to="/piante" className={dropItem} onClick={() => setOpenPiante(false)}>🌿 Le mie piante</Link>
+                                        <Link to="/ai/pipeline-test" className={dropItem} onClick={() => setOpenPiante(false)}>🧪 Analisi Idoneità ambientale</Link>
                                     </div>
                                 )}
                             </div>
@@ -95,7 +93,6 @@ export default function Navbar() {
                                     <div className={dropPanel}>
                                         <div className="px-4 py-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">Strumenti Smart</div>
                                         <Link to="/ai/irrigazione" className={dropItem} onClick={() => setOpenAI(false)}>🤖 Assistente Coltivazione</Link>
-                                        <Link to="/ai/pipeline-test" className={dropItem} onClick={() => setOpenAI(false)}>🧪 Analisi Idoneità</Link>
                                     </div>
                                 )}
                             </div>
@@ -153,8 +150,8 @@ export default function Navbar() {
                                 <div className="bg-emerald-50/50 rounded-xl p-2 space-y-1">
                                     <p className="px-3 py-2 text-xs font-bold text-emerald-500 uppercase">Menu Rapido</p>
                                     <Link to="/piante" onClick={() => setOpenMobile(false)} className="block p-3 rounded-lg hover:bg-white font-medium text-emerald-800">🌿 Le mie piante</Link>
+                                    <Link to="/ai/pipeline-test" onClick={() => setOpenMobile(false)} className="block p-3 rounded-lg hover:bg-white font-medium text-emerald-800">🧪 Analisi Idoneità ambientale</Link>
                                     <Link to="/ai/irrigazione" onClick={() => setOpenMobile(false)} className="block p-3 rounded-lg hover:bg-white font-medium text-emerald-800">🤖 Assistente AI</Link>
-                                    <Link to="/ai/pipeline-test" onClick={() => setOpenMobile(false)} className="block p-3 rounded-lg hover:bg-white font-medium text-emerald-800">🧪 Analisi Idoneità</Link>
                                 </div>
                                 <button onClick={() => {handleLogout(); setOpenMobile(false)}} className="w-full py-3 mt-2 text-red-500 font-bold hover:bg-red-50 rounded-lg">Esci</button>
                             </>

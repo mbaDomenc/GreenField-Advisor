@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-
 const loadGoogleScript = (apiKey) =>
   new Promise((resolve, reject) => {
     if (window.google?.maps?.places) return resolve();
@@ -19,7 +18,7 @@ const loadGoogleScript = (apiKey) =>
     document.head.appendChild(s);
   });
 
-/** Utility: estrai parti dell'indirizzo da address_components */
+/** Utility: estrazione parti dell'indirizzo da address_components */
 function parseAddressComponents(components = []) {
   const get = (type) =>
     components.find((c) => c.types.includes(type))?.long_name || "";
@@ -48,7 +47,6 @@ function parseAddressComponents(components = []) {
 
   return { locality, admin2, admin1, country, countryCode, display };
 }
-
 
 export default function PlaceAutocomplete({
   value,
@@ -175,7 +173,7 @@ export default function PlaceAutocomplete({
     requestPredictions(value || "");
   }, [value, ready, requestPredictions]);
 
-  // Chiudi dropdown click-outside
+  // Chiusura dropdown click-outside
   useEffect(() => {
     const handleClick = (e) => {
       if (!inputRef.current) return;
@@ -187,11 +185,11 @@ export default function PlaceAutocomplete({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  // Quando seleziono una prediction -> chiedo i details
+  // Quando viene selezionata una prediction -> vengono chiesti i details
   const selectPrediction = (pred) => {
     if (!pred || !psRef.current) return;
 
-    //Blocca la prossima ricerca che scatterebbe a causa dell'onChangeText
+    // Blocca la prossima ricerca che scatterebbe a causa dell'onChangeText
     selectingRef.current = true;
 
     // Aggiorno subito il testo mostrato e CHIUDO la dropdown
@@ -200,7 +198,6 @@ export default function PlaceAutocomplete({
     setOpen(false);
     setPredictions([]);      // pulisci lista
     setHighlightIndex(-1);
-
 
     psRef.current.getDetails(
       {

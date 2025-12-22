@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, MapPin, Camera, Trash2, Sprout, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, MapPin, Camera, Trash2, Sprout, CheckCircle, AlertTriangle, Loader2, ScanLine } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 import { diagnosePlantHealth } from '../api/imagesApi'; 
 import PlaceAutocomplete from './PlaceAutocomplete';
@@ -80,10 +80,7 @@ export default function PlantFormModal({ open, onClose, initialData = null, onSu
     if (!name.trim()) next.name = 'Nome obbligatorio';
     if (!selectedSpecies) next.species = 'Specie obbligatoria';
     if (!placeText) next.location = 'Posizione obbligatoria';
-    
-    //OBBLIGATORIETÀ TERRENO
     if (!soil) next.soil = 'Seleziona il tipo di terreno';
-    
     if (!selectedFile && !preview) next.image = 'Foto obbligatoria';
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -122,6 +119,21 @@ export default function PlantFormModal({ open, onClose, initialData = null, onSu
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                 {errors.image && <p className="text-xs text-red-600 mt-2 font-bold">{errors.image}</p>}
                 
+                {/* --- Box Informativo Foto Foglia --- */}
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-3 w-full max-w-md">
+                    <div className="p-2 bg-white rounded-full border border-blue-100 shadow-sm shrink-0">
+                        <ScanLine className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-bold text-blue-900 mb-0.5">
+                            Suggerimento per l'AI
+                        </h4>
+                        <p className="text-xs text-blue-700 leading-snug">
+                            Per un riconoscimento preciso, carica una foto nitida di una <strong>singola foglia</strong> ben illuminata, piuttosto che dell'intera pianta.
+                        </p>
+                    </div>
+                </div>
+
                 {/* Risultato IA */}
                 <div className="mt-4 w-full max-w-md">
                     {analyzing && <div className="flex items-center justify-center gap-2 text-indigo-600 bg-indigo-50 p-2 rounded-lg border border-indigo-100"><Loader2 className="h-4 w-4 animate-spin" /><span className="text-sm font-medium">Analisi salute in corso...</span></div>}
