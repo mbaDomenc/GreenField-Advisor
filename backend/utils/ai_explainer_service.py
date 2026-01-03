@@ -1,17 +1,23 @@
 import os
 import asyncio
+import logging
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 import httpx
 
-# URL API (OpenRouter o simili)
+# ✅ AGGIUNGI LOGGER
+logger = logging.getLogger(__name__)
+
+# URL API 
 HF_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Modelli di fallback
 HF_FALLBACK_MODELS = [
-    "microsoft/phi-3.5-mini-128k-instruct",       
-    "google/gemini-2.0-flash-exp:free",           
-    "meta-llama/llama-3.2-11b-vision-instruct:free",
+    "openai/gpt-3.5-turbo-16k",
+    "openai/gpt-3.5-turbo",
+    "meta-llama/Llama-2-7b-chat-hf",
+    "togethercomputer/RedPajama-INCITE-Chat-7B-v1",
+    "bigscience/bloomz-7b1",
+    "stabilityai/stablelm-tuned-alpha-7b",
 ]
 
 def _fmt(v, unit: Optional[str] = None):
@@ -20,6 +26,7 @@ def _fmt(v, unit: Optional[str] = None):
         s = f"{float(v):.1f}"
         return f"{s}{unit}" if unit else s
     except: return "n/d"
+
 
 def _format_rain_trend(trend: list, today_date: str) -> str:
     if not trend: return "Nessun dato."
@@ -37,12 +44,14 @@ def _format_rain_trend(trend: list, today_date: str) -> str:
     f_str = ", ".join(future) if future else "Assente"
     return f"Passata: {p_str}. Futura: {f_str}"
 
+
 def _get_season(now: datetime) -> str:
     m = now.month
     if 3 <= m <= 5: return "Primavera"
     if 6 <= m <= 8: return "Estate"
     if 9 <= m <= 11: return "Autunno"
     return "Inverno"
+
 
 def _fallback_text(reason: str, decision: Dict[str, Any]) -> str:
     action = decision.get("recommendation", "—")
@@ -51,7 +60,6 @@ def _fallback_text(reason: str, decision: Dict[str, Any]) -> str:
 
 def _prepare_prompt(plant: Dict[str, Any], agg: Dict[str, Any], decision: Dict[str, Any], now: datetime) -> str:
     meta_wx = agg.get("weather") or {}
-    prof = agg.get("profile") or {}
     
     rec = decision.get("recommendation")
     qty = decision.get("quantity", 0)
@@ -67,51 +75,44 @@ def _prepare_prompt(plant: Dict[str, Any], agg: Dict[str, Any], decision: Dict[s
     
     # Istruzione Concimazione
     if fert_info:
-        fert_instr = f"L'utente ha già concimato ({fert_info}). Rispondi: '✅ CONCIMAZIONE: Non necessaria (Già effettuata: {fert_info}). Ottimo lavoro!'"
+        fert_instr = f"L'utente ha già concimato ({fert_info}). Rispondi: '🌿 CONCIMAZIONE: Non necessaria (Già effettuata: {fert_info}).'"
     else:
-        fert_instr = "Nessuna concimazione recente. Consiglia gentilmente una concimazione NPK equilibrata per la stagione."
+        fert_instr = "Nessuna concimazione recente. Consiglia una concimazione NPK equilibrata."
 
-    rain_trend_str = _format_rain_trend(meta_wx.get("rain_trend", []), now.isoformat())
     season = _get_season(now)
 
     return f"""
-Sei un ASSISTENTE AGRONOMO amichevole e professionale. 
-Il tuo obiettivo è guidare l'utente nella cura della sua pianta con un tono chiaro, incoraggiante e moderno.
+Sei un ASSISTENTE AGRONOMO professionale e sintetico.
 
-[DATI PIANTA]
-🌿 Nome: {plant.get('name')} ({plant.get('species')})
-📅 Stagione: {season}
+[DATI E CONDIZIONI]
+Pianta: {plant.get('name')}
+Stagione: {season}
+Meteo: {_fmt(meta_wx.get('temp'), '°C')}, Pioggia 5gg passati: {past_rain}, previsti: {future_rain}.
+Acqua data oggi: {user_water}
 
-[CONDIZIONI AMBIENTALI]
-🌡️ Temperatura: {_fmt(meta_wx.get('temp'), '°C')}
-🌧️ Pioggia Recente (5gg): {past_rain}
-☔ Previsioni Pioggia (5gg): {future_rain}
+[RISULTATO ANALISI]
+- Fabbisogno calcolato: {calc_val}
+- Consiglio: {rec} (Qtà: {qty}L)
+- Istruzione Concimazione: {fert_instr}
 
-[STORICO INTERVENTI UTENTE]
-💧 Acqua data oggi: {user_water}
-💊 Concimazione recente: {fert_info if fert_info else "NESSUNA"}
+[REGOLE RIGIDE DI FORMATTAZIONE]
+1. Usa SOLO ed ESCLUSIVAMENTE le emoji indicate nel formato qui sotto (💧, 🌿, 💡) all'inizio della riga.
+2. VIETATO inserire altre emoji (niente faccine, niente mani che salutano, niente frutti) all'interno delle frasi.
+3. Tono: Professionale, diretto, niente saluti iniziali (tipo "Ciao!"). Vai dritto al punto.
+4. Non usare termini tecnici complessi (no "ANFIS").
 
-[RISULTATO ANALISI AGRONOMICA]
-(Questi dati provengono da calcoli complessi, NON citare 'ANFIS' o 'Modello', parla di 'fabbisogno calcolato' o 'analisi')
-- Fabbisogno Teorico: {calc_val}
-- Consiglio Finale: {rec} (Quantità suggerita: {qty}L)
-
-[ISTRUZIONI DI SCRITTURA]
-1. Usa un tono moderno, chiaro e qualche emoji appropriata (💧, 🌿, 🌦️, ✅) solo all'inizio della frase.
-2. NON usare termini tecnici come "ANFIS", "Algoritmo" o "Modello Predittivo". Usa frasi come "Dall'analisi dei dati...", "Considerando il meteo...", "Il fabbisogno calcolato...".
-3. Spiega il "PERCHÉ" della decisione in modo semplice.
-   - Esempio: "💧 IRRIGAZIONE: Non serve annaffiare oggi. Hai già fornito acqua a sufficienza e il terreno risulta umido grazie alle piogge recenti."
-4. Segui rigorosamente le istruzioni sulla concimazione date sopra.
-
-FORMATO RISPOSTA (NO MARKDOWN, SOLO TESTO PULITO):
-💧 IRRIGAZIONE: [Tuo consiglio amichevole]
-🌿 CONCIMAZIONE: [Tuo consiglio]
-💡 NOTE: [Una piccola chicca o consiglio extra per la stagione]
+FORMATO RISPOSTA OBBLIGATORIO:
+💧 IRRIGAZIONE: [Testo del consiglio, senza emoji aggiuntive]
+🌿 CONCIMAZIONE: [Testo del consiglio, senza emoji aggiuntive]
+💡 NOTE: [Breve nota tecnica, senza emoji aggiuntive]
 """.strip()
 
+
 async def _call_hf_text_generation_async(model: str, prompt: str) -> Tuple[Optional[str], Optional[int], Optional[str]]:
-    api_key = os.getenv("HF_API_KEY") or os.getenv("OPENROUTER_API_KEY")
-    if not api_key: return None, None, "No Key"
+    api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("HF_API_KEY")
+    if not api_key:
+        logger.error("❌ Nessuna API key trovata (OPENROUTER_API_KEY o HF_API_KEY)")
+        return None, None, "No Key"
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -123,38 +124,62 @@ async def _call_hf_text_generation_async(model: str, prompt: str) -> Tuple[Optio
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "Sei un agronomo AI amichevole. Rispondi in Italiano. Usa Emoji. No Markdown."},
+            {"role": "system", "content": "Sei un agronomo AI. Rispondi in Italiano. Usa le emoji (💧, 🌿, 💡) SOLO come punto elenco a inizio riga. NON usare assolutamente altre emoji o faccine nel testo. Sii professionale e molto dettagliato."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.4, 
+        "temperature": 0.3, 
         "max_tokens": 800
     }
 
     try:
-        async with httpx.AsyncClient(timeout=40.0) as cli:
+        logger.info(f"🔄 Tentativo con modello: {model}")
+        async with httpx.AsyncClient(timeout=45.0) as cli:
             r = await cli.post(HF_API_URL, headers=headers, json=payload)
-            if r.status_code != 200: return None, None, f"Status {r.status_code}"
-            j = r.json()
-            content = j.get("choices", [])[0].get("message", {}).get("content")
-            return content.strip() if content else None, j.get("usage", {}).get("total_tokens"), None
+            
+            if r.status_code == 200:
+                j = r.json()
+                content = j.get("choices", [])[0].get("message", {}).get("content")
+                tokens = j.get("usage", {}).get("total_tokens")
+                
+                if content:
+                    logger.info(f"✅ SUCCESSO con modello: {model} (tokens: {tokens})")
+                    return content.strip(), tokens, None
+                else:
+                    logger.warning(f"⚠️ Modello {model} - Risposta vuota")
+                    return None, None, "Empty response"
+            else:
+                error_msg = f"Status {r.status_code}"
+                logger.warning(f"⚠️ Modello {model} fallito: {error_msg}")
+                logger.debug(f"Response body: {r.text[:200]}")
+                return None, None, error_msg
+                
     except Exception as e:
+        logger.error(f"❌ Errore con {model}: {str(e)}")
         return None, None, str(e)
+
 
 async def explain_irrigation_async(*, plant: Dict[str, Any], agg: Dict[str, Any], decision: Dict[str, Any], now: datetime) -> Dict[str, Any]:
     api_key = os.getenv("HF_API_KEY") or os.getenv("OPENROUTER_API_KEY")
     if not api_key:
+        logger.error("❌ Manca API Key nel .env")
         return {"text": _fallback_text("Manca API Key", decision), "usedLLM": False}
 
+    logger.info(f"🚀 Inizio ciclo fallback con {len(HF_FALLBACK_MODELS)} modelli")
     prompt = _prepare_prompt(plant, agg, decision, now)
     
-    for model in HF_FALLBACK_MODELS:
-        print(f"[AI] Provo modello: {model}...")
+    for i, model in enumerate(HF_FALLBACK_MODELS, 1):
+        logger.info(f"📡 [{i}/{len(HF_FALLBACK_MODELS)}] Provo modello: {model}")
         text, tokens, err = await _call_hf_text_generation_async(model, prompt)
+        
         if text:
-            print(f"[AI SUCCESS] Modello {model} ha risposto!")
-            return {"text": text, "usedLLM": True, "model": model}
+            logger.info(f"🎉 SUCCESS! Modello {model} ha risposto correttamente!")
+            return {"text": text, "usedLLM": True, "model": model, "tokens": tokens}
+        
+        logger.warning(f"⏭️ Passo al prossimo modello (errore: {err})")
         await asyncio.sleep(1)
 
+    logger.error("❌ TUTTI I MODELLI HANNO FALLITO - Uso fallback testuale")
     return {"text": _fallback_text("Server occupati", decision), "usedLLM": False}
+
 
 get_ai_explanation = explain_irrigation_async
