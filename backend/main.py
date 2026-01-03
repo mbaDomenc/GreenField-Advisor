@@ -11,7 +11,6 @@ if sys.version_info < (3, 10):
     import importlib_metadata
     importlib.metadata.packages_distributions = importlib_metadata.packages_distributions
 
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -30,6 +29,18 @@ from routers import sensorRouter
 from routers import imageRouter
 from routers import aiRouter 
 from routers import userRouter, plantsRouter
+
+import logging
+
+# Configurazione logging dettagliato
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Abilito debug per il modulo AI
+logging.getLogger("ai").setLevel(logging.DEBUG)
+logging.getLogger("httpx").setLevel(logging.WARNING)  # Riduci rumore HTTP
 
 # Creazione directory upload se non esiste
 uploads_dir = Path(settings.UPLOAD_DIR)
@@ -65,7 +76,6 @@ app.include_router(imageRouter.router)
 app.include_router(pipelineRouter.router)
 app.include_router(aiRouter.router)
 
-
 @app.get("/health")
 def health():
     # Verifica al volo se la chiave AI è letta correttamente
@@ -81,7 +91,6 @@ def health():
             "database": "Connected"
         }
     }
-
 
 @app.on_event("startup")
 def init_indexes():
