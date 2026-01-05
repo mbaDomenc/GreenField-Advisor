@@ -13,8 +13,8 @@ HF_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Modelli di fallback in ordine di preferenza
 HF_FALLBACK_MODELS = [
     "meta-llama/llama-3.3-70b-instruct:free",           # Molto verboso e preciso (Primario)
-    "google/gemini-2.0-flash-lite-preview-02-05:free", # Fallback veloce
-    "google/gemini-2.0-pro-exp-02-05:free",            # Fallback intelligente
+    "google/gemini-2.0-flash-lite-preview-02-05:free",  # Fallback veloce
+    "google/gemini-2.0-pro-exp-02-05:free",             # Fallback intelligente
     "mistralai/mistral-small-24b-instruct-2501:free",
 ]
 
