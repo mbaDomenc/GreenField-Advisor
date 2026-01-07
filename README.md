@@ -283,6 +283,12 @@ Il modello CNN MobileNetV2 è stato addestrato sul dataset PlantVillage:
 
 **Link Kaggle**: https://www.kaggle.com/datasets/emmarex/plantdisease
 
+**Dettagli**:
+- **50,000+** immagini di piante malate e sane
+- **10 classi** principali (Bacterial Spot, Late Blight, Mosaic Virus, etc.)
+- **Transfer Learning** con MobileNetV2 pre-trained su ImageNet
+- Accuracy: 95.3% (Validation Set)
+- 
 ---
 
 <a name="api-documentation"></a>
