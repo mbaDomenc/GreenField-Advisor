@@ -200,3 +200,81 @@ Se il backend non è su **localhost:8000**, modifica **frontend/src/services/api
 const API_BASE_URL = 'http://localhost:8000/api';
 
 ```
+
+---
+
+## 🚀 Avvio Applicazione
+
+### 🪟 Windows
+
+**Terminale 1 - Backend**
+```powershell
+cd backend
+venv\Scripts\activate
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+```
+
+**Terminale 2 - Frontend**
+```powershell
+cd frontend
+npm start
+
+```
+
+---
+
+### 🍎 macOS/Linux
+
+**Terminale 1 - Backend**
+```powershell
+cd backend
+source venv/bin/activate
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+```
+
+**Terminale 2 - Frontend**
+```powershell
+cd frontend
+npm start
+
+```
+
+---
+
+## ✅ Verifica Funzionamento
+
+Dopo l'avvio, dovresti vedere:
+
+**Backend**
+```text
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process
+INFO:     Application startup complete.
+
+```
+
+**Frontend**
+```text
+Compiled successfully!
+
+You can now view greenfield-advisor in the browser.
+
+  Local:            http://localhost:3000
+  On Your Network:  http://192.168.x.x:3000
+
+```
+
+Accedi all'applicazione:
+- Frontend: http://localhost:3000
+- API Docs (Swagger): http://localhost:8000/docs
+- MongoDB: **mongodb://localhost:27017/greenfield_db**
+
+---
+
+## 📊 Dataset
+
+**PlantVillage Dataset (CNN Training)**
+Il modello CNN MobileNetV2 è stato addestrato sul dataset PlantVillage:
+**Link Kaggle**: https://www.kaggle.com/datasets/emmarex/plantdisease
