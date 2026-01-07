@@ -24,6 +24,7 @@
 
 ---
 
+<a name="architettura"></a>
 ## 🏗️ Architettura
 
 Struttura del progetto e organizzazione delle directory:
