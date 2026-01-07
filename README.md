@@ -162,7 +162,7 @@ npm audit fix
 
 ## ⚙️ Configurazione
 
-**Backend - Variabili d'Ambiente:**
+**Backend - Variabili d'Ambiente**
 
 Crea un file .env nella cartella backend/ con le seguenti variabili:
 
@@ -192,9 +192,9 @@ Ottieni le API keys gratuite:
 - **OpenRouter**: https://openrouter.ai/
 - **HuggingFace**: https://huggingface.co/settings/tokens
 
-**Backend - Variabili d'Ambiente:**
+**Frontend - Configurazione API Endpoint**
 
-Se il backend non è su *localhost:8000*, modifica *frontend/src/services/api.js*:
+Se il backend non è su 'localhost:8000', modifica 'frontend/src/services/api.js':
 
 ```javascript
 const API_BASE_URL = 'http://localhost:8000/api';
