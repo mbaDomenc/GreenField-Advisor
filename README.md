@@ -350,13 +350,6 @@ sudo systemctl start mongod
 npm install --legacy-peer-deps
 ```
 
-**Problema**: *Port 8000 already in use*
-
-**Soluzione**: Cambia porta o termina processo esistente:
-```bash
-npm install --legacy-peer-deps
-```
-
 **Problema: TensorFlow Installation Errors (Apple Silicon M1/M2)**
 
 **Soluzione**: Installa versione compatibile:
