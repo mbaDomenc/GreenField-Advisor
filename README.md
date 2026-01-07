@@ -7,18 +7,19 @@
 ---
 
 ## 📋 Indice
-- [Architettura](#architettura)
-- [Stack Tecnologico](#stack-tecnologico)
-- [Prerequisiti](#prerequisiti)
-- [Installazione](#installazione)
-- [Configurazione](#configurazione)
-- [Avvio Applicazione](#avvio-applicazione)
-- [Dataset](#dataset)
-- [API Documentation](#api-documentation)
-- [Troubleshooting](#troubleshooting)
-- [Autori](#autori)
-- [Licenza](#licenza)
-- [Supporto](#supporto)
+
+- [Architettura](#-architettura)
+- [Stack Tecnologico](#-stack-tecnologico)
+- [Prerequisiti](#-prerequisiti)
+- [Installazione](#-installazione)
+- [Configurazione](#-configurazione)
+- [Avvio Applicazione](#-avvio-applicazione)
+- [Dataset](#-dataset)
+- [API Documentation](#-api-documentation)
+- [Troubleshooting](#-troubleshooting)
+- [Autori](#-autori)
+- [Licenza](#-licenza)
+- [Supporto](#-supporto)
 
 ---
 
