@@ -184,7 +184,6 @@ OPENROUTER_API_KEY=your-openrouter-api-key
 
 # HuggingFace API (fallback LLM)
 HF_API_KEY=your-huggingface-api-key
-
 ```
 
 Ottieni le API keys gratuite:
@@ -198,7 +197,6 @@ Se il backend non è su **localhost:8000**, modifica **frontend/src/services/api
 
 ```javascript
 const API_BASE_URL = 'http://localhost:8000/api';
-
 ```
 
 ---
@@ -212,14 +210,12 @@ const API_BASE_URL = 'http://localhost:8000/api';
 cd backend
 venv\Scripts\activate
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
 ```
 
 **Terminale 2 - Frontend**
 ```powershell
 cd frontend
 npm start
-
 ```
 
 ---
@@ -231,14 +227,12 @@ npm start
 cd backend
 source venv/bin/activate
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
 ```
 
 **Terminale 2 - Frontend**
 ```powershell
 cd frontend
 npm start
-
 ```
 
 ---
@@ -278,3 +272,108 @@ Accedi all'applicazione:
 Il modello CNN MobileNetV2 è stato addestrato sul dataset PlantVillage:
 
 **Link Kaggle**: https://www.kaggle.com/datasets/emmarex/plantdisease
+
+---
+
+## API Documentation
+
+Una volta avviato il backend, la documentazione interattiva è disponibile su:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+** Endpoint Principali **
+
+```text
+POST   /api/auth/login              - Autenticazione utente
+GET    /api/plants                  - Lista piante
+POST   /api/plants                  - Crea nuova pianta
+GET    /api/plants/{id}             - Dettagli pianta
+POST   /api/sensors/data            - Invia lettura sensore
+POST   /api/images/upload           - Upload immagine per analisi CNN
+GET    /api/pipeline/process        - Esegui pipeline AI completa
+POST   /api/interventions           - Registra intervento agricolo
+GET    /api/weather                 - Dati meteo correnti
+```
+
+---
+
+## 🐛 Troubleshooting
+
+**Problema**: *ModuleNotFoundError: No module named 'fastapi'*
+**Soluzione**: Verifica che l'ambiente virtuale sia attivo e reinstalla dipendenze:
+```bash
+pip install -r requirements.txt
+```
+
+**Problema**: *Port 8000 already in use*
+**Soluzione**: Cambia porta o termina processo esistente:
+```bash
+# Windows
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+
+# macOS/Linux
+lsof -ti:8000 | xargs kill -9
+```
+
+**Problema:  MongoDB Connection Failed**
+**Soluzione**: Verifica che MongoDB sia in esecuzione:
+```bash
+# Windows (se servizio)
+net start MongoDB
+
+# macOS/Linux
+brew services start mongodb-community
+# oppure
+sudo systemctl start mongod
+```
+
+**Problema**: *npm ERR! ERESOLVE unable to resolve dependency tree*
+**Soluzione**: Usa flag legacy peer deps:
+```bash
+# Windows
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+
+# macOS/Linux
+lsof -ti:8000 | xargs kill -9
+```
+
+**Problema**: *Port 8000 already in use*
+**Soluzione**: Cambia porta o termina processo esistente:
+```bash
+npm install --legacy-peer-deps
+```
+
+**Problema: TensorFlow Installation Errors (Apple Silicon M1/M2)**
+**Soluzione**: Installa versione compatibile:
+```bash
+pip install tensorflow-macos tensorflow-metal
+```
+
+---
+
+## 👥 Autori
+
+- Domenico D'Ambrosio
+- Mauro Pasquale
+- Fabrizio Corsini
+
+**Corso di Laurea Magistrale in Ingegneria Informatica**
+**Curriculum**: Artificial Intelligence and Data Science
+**A.A.** 2025/2026
+
+---
+
+##  📄 Licenza
+Questo progetto è sviluppato per scopi accademici.
+
+---
+
+## 📞 Supporto
+Per problemi o domande:
+- Issues GitHub: Apri una Issue
+
+---
+
+**Made with 🌱 by GreenField Team**
