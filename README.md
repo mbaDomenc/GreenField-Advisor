@@ -347,12 +347,7 @@ sudo systemctl start mongod
 
 **Soluzione**: Usa flag legacy peer deps:
 ```bash
-# Windows
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
-
-# macOS/Linux
-lsof -ti:8000 | xargs kill -9
+npm install --legacy-peer-deps
 ```
 
 **Problema**: *Port 8000 already in use*
