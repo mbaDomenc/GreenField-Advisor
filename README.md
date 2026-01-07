@@ -20,6 +20,7 @@
 - [Autori](#-autori)
 - [Licenza](#-licenza)
 - [Supporto](#-supporto)
+
 ---
 
 ## 🏗️ Architettura
