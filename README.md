@@ -45,6 +45,7 @@ GreenField-Advisor/
 
 ---
 
+<a name="stack-tecnologico"></a>
 ## 🛠️ Stack Tecnologico
 
 ### Backend
@@ -64,6 +65,7 @@ GreenField-Advisor/
 
 ---
 
+<a name="prerequisiti"></a>
 ## ✅ Prerequisiti
 
 ### Requisiti di Sistema
@@ -87,6 +89,7 @@ mongod --version
 
 ---
 
+<a name="installazione"></a>
 ## 📦 Installazione
 
 ### 🪟 Windows
@@ -164,6 +167,7 @@ npm audit fix
 
 ---
 
+<a name="configurazione"></a>
 ## ⚙️ Configurazione
 
 **Backend - Variabili d'Ambiente**
@@ -205,6 +209,7 @@ const API_BASE_URL = 'http://localhost:8000/api';
 
 ---
 
+<a name="avvio-applicazione"></a>
 ## 🚀 Avvio Applicazione
 
 ### 🪟 Windows
@@ -269,6 +274,7 @@ Accedi all'applicazione:
 
 ---
 
+<a name="dataset"></a>
 ## 📊 Dataset
 
 **PlantVillage Dataset (CNN Training)**
@@ -279,6 +285,7 @@ Il modello CNN MobileNetV2 è stato addestrato sul dataset PlantVillage:
 
 ---
 
+<a name="api-documentation"></a>
 ## 📖 API Documentation
 
 Una volta avviato il backend, la documentazione interattiva è disponibile su:
@@ -301,6 +308,7 @@ GET    /api/weather                 - Dati meteo correnti
 
 ---
 
+<a name="troubleshooting"></a>
 ## 🐛 Troubleshooting
 
 **Problema**: *ModuleNotFoundError: No module named 'fastapi'*
@@ -357,6 +365,7 @@ pip install tensorflow-macos tensorflow-metal
 
 ---
 
+<a name="autori"></a>
 ## 👥 Autori
 
 - Domenico D'Ambrosio
@@ -369,11 +378,13 @@ pip install tensorflow-macos tensorflow-metal
 
 ---
 
+<a name="licenza"></a>
 ##  📄 Licenza
 Questo progetto è sviluppato per scopi accademici.
 
 ---
 
+<a name="supporto"></a>
 ## 📞 Supporto
 Per problemi o domande:
 - Issues GitHub: Apri una Issue
