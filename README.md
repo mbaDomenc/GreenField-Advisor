@@ -373,7 +373,9 @@ pip install tensorflow-macos tensorflow-metal
 - Fabrizio Corsini
 
 **Corso di Laurea Magistrale in Ingegneria Informatica**
+
 **Curriculum**: Artificial Intelligence and Data Science
+
 **A.A.** 2025/2026
 
 ---
@@ -387,7 +389,7 @@ Questo progetto è sviluppato per scopi accademici.
 <a name="supporto"></a>
 ## 📞 Supporto
 Per problemi o domande:
-- Issues GitHub: Apri una Issue
+- **Issues GitHub**: Apri una Issue
 
 ---
 
