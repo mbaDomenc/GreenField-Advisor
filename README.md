@@ -277,7 +277,7 @@ Il modello CNN MobileNetV2 è stato addestrato sul dataset PlantVillage:
 
 ---
 
-## API Documentation
+## 📖 API Documentation
 
 Una volta avviato il backend, la documentazione interattiva è disponibile su:
 - **Swagger UI**: http://localhost:8000/docs
