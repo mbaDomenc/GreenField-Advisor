@@ -176,28 +176,52 @@ Crea un file .env nella cartella backend/ con le seguenti variabili:
 
 ```text
 # MongoDB
-MONGODB_URL=mongodb://localhost:27017
-DB_NAME=greenfield_db
+# --- DATABASE ---
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/homegardening?retryWrites=true&w=majority
+MONGO_DB=homegardening
 
-# JWT
-SECRET_KEY=your-secret-key-here-change-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+# --- AUTHENTICATION ---
+JWT_SECRET=your-jwt-secret-here-change-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_MINUTES=60
+SECRET_KEY=your-super-secret-key-change-this-in-production
 
-# OpenWeatherMap API (opzionale)
-OPENWEATHER_API_KEY=your-openweathermap-api-key
+# Email Configuration (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-gmail-app-password-here
 
-# OpenRouter API (per LLM)
-OPENROUTER_API_KEY=your-openrouter-api-key
+# Frontend URL (per i link di reset password)
+FRONTEND_URL=http://localhost:3000
 
-# HuggingFace API (fallback LLM)
-HF_API_KEY=your-huggingface-api-key
+# --- AI CONFIGURATION (OPENROUTER - MULTI MODEL) ---
+HF_API_KEY=your-openrouter-api-key-here
+
+# --- AI CONFIGURATION (GOOGLE - BACKUP/DISABILITATA) ---
+GOOGLE_API_KEY=your-google-api-key-here
+
+# --- SERVER SETTINGS ---
+HOST=0.0.0.0
+PORT=8000
+UPLOAD_DIR=./uploads
+MAX_UPLOAD_MB=5
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# --- WEATHER SERVICE ---
+WEATHER_TTL_SECONDS=1800
+WEATHER_GRID_PRECISION=2
+
+# --- FRONTEND MAPS ---
+REACT_APP_GOOGLE_MAPS_API_KEY=your-google-maps-api-key-here
 ```
 
 Ottieni le API keys gratuite:
-- **OpenWeatherMap**: https://openweathermap.org/api
-- **OpenRouter**: https://openrouter.ai/
-- **HuggingFace**: https://huggingface.co/settings/tokens
+- **MongoDB Atlas**: https://www.mongodb.com/cloud/atlas/register
+- **Gmail App Password**: https://myaccount.google.com/apppasswords
+- - **OpenRouter API**: https://openrouter.ai/
+- **Google Maps API**: https://openweathermap.org/api](https://console.cloud.google.com/apis/credentials
+- **Google Cloud API**: https://console.cloud.google.com/
 
 **Frontend - Configurazione API Endpoint**
 
