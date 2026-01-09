@@ -13,6 +13,9 @@ import PlantDetail from "./pages/PlantDetail";
 import RequireAuth from './components/RequireAuth';
 import RequireGuest from './components/RequireGuest';
 import PipelineTestPage from "./pages/PipelineTestPage";
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
 
 // Wrapper per la lista
 function PlantsListWrapper() {
@@ -27,6 +30,7 @@ function PlantsListWrapper() {
         </RequireAuth>
     );
 }
+
 
 // Wrapper per il dettaglio
 function PlantDetailWrapper() {
@@ -43,6 +47,7 @@ function PlantDetailWrapper() {
     );
 }
 
+
 export default function App() {
     return (
         <div className="min-h-screen flex flex-col bg-[#f0fdf4]">
@@ -54,6 +59,10 @@ export default function App() {
                     {/* Guest only */}
                     <Route path="/login" element={<RequireGuest><LoginPage/></RequireGuest>}/>
                     <Route path="/register" element={<RequireGuest><RegisterPage/></RequireGuest>}/>
+                    
+                    {/* Password Reset - Guest only */}
+                    <Route path="/forgot-password" element={<RequireGuest><ForgotPassword/></RequireGuest>}/>
+                    <Route path="/reset-password" element={<RequireGuest><ResetPassword/></RequireGuest>}/>
 
                     {/* Private */}
                     <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>}/>
