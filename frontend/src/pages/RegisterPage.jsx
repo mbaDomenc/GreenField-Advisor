@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, Users, Sprout, Lock, Eye, EyeOff, MapPin, ArrowRight } from 'lucide-react';
+import { User, Mail, Calendar, Users, Sprout, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
-import PlaceAutocomplete from '../components/PlaceAutocomplete';
-const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { setAccessToken, setUser } = useAuth();
-  const [formData, setFormData] = useState({ nome: '', cognome: '', email: '', username: '', dataNascita: '', sesso: '', password: '', confirmPassword: '', location: '' });
-  const [showPw, setShowPw] = useState(false);
+  const [formData, setFormData] = useState({ 
+    nome: '', 
+    cognome: '', 
+    email: '', 
+    username: '', 
+    dataNascita: '', 
+    sesso: '', 
+    password: '', 
+    confirmPassword: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -61,32 +69,62 @@ const RegisterPage = () => {
                 <InputIcon icon={Calendar} name="dataNascita" type="date" val={formData.dataNascita} onChange={handleChange} />
                 <div className="relative">
                     <Users className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
-                    <select name="sesso" value={formData.sesso} onChange={handleChange} className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 font-medium text-gray-600 appearance-none" required>
-                        <option value="">Sesso</option><option value="M">Uomo</option><option value="F">Donna</option><option value="Altro">Altro</option>
+                    <select 
+                      name="sesso" 
+                      value={formData.sesso} 
+                      onChange={handleChange} 
+                      className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 font-medium text-gray-600 appearance-none" 
+                      required
+                    >
+                        <option value="" disabled>Seleziona sesso</option>
+                        <option value="M">Uomo</option>
+                        <option value="F">Donna</option>
+                        <option value="Altro">Altro</option>
                     </select>
                 </div>
             </div>
 
-            <div className="relative">
-                <MapPin className="absolute left-4 top-4 h-5 w-5 text-gray-400 z-10" />
-                <PlaceAutocomplete 
-                    value={formData.location} onChangeText={v => setFormData(p=>({...p, location:v}))} 
-                    onSelectPlace={p => setFormData(prev => ({...prev, location: p.formattedAddress}))}
-                    apiKey={GOOGLE_API_KEY}
-                    className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 font-medium placeholder-gray-400"
-                    placeholder="Località (es. Milano)"
-                />
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
+                {/* Password*/}
                 <div className="relative">
                     <Lock className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
-                    <input type={showPw ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="Password" required className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 font-medium placeholder-gray-400" />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      name="password" 
+                      value={formData.password} 
+                      onChange={handleChange} 
+                      placeholder="Password" 
+                      required 
+                      className="w-full pl-12 pr-12 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 font-medium placeholder-gray-400" 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      className="absolute right-4 top-4 text-gray-400 hover:text-emerald-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
                 </div>
+
+                {/* Conferma Password*/}
                 <div className="relative">
                     <Lock className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
-                    <input type={showPw ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Conferma" required className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 font-medium placeholder-gray-400" />
-                    <button type="button" onClick={()=>setShowPw(!showPw)} className="absolute right-4 top-4 text-gray-400 hover:text-emerald-600"><Eye className="h-5 w-5"/></button>
+                    <input 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      name="confirmPassword" 
+                      value={formData.confirmPassword} 
+                      onChange={handleChange} 
+                      placeholder="Conferma" 
+                      required 
+                      className="w-full pl-12 pr-12 py-4 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-emerald-100 font-medium placeholder-gray-400" 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                      className="absolute right-4 top-4 text-gray-400 hover:text-emerald-600 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
                 </div>
             </div>
 
