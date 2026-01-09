@@ -4,6 +4,7 @@ import { User, Lock, Sprout, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { api } from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const { setAccessToken, setUser } = useAuth();
@@ -11,6 +12,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,11 +34,13 @@ const LoginPage = () => {
     }
   };
 
+
   return (
     <div className="min-h-screen flex items-center justify-center relative py-10 px-4 overflow-hidden">
        {/* Sfondo decorativo */}
        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 -z-20"></div>
        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-200/30 rounded-full blur-[100px] -z-10"></div>
+
 
        <div className="w-full max-w-md relative z-10">
          <div className="text-center mb-10">
@@ -45,6 +49,7 @@ const LoginPage = () => {
              </div>
              <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Bentornato!</h2>
          </div>
+
 
          <div className="glass bg-white/70 p-10 rounded-[2.5rem] shadow-2xl shadow-emerald-900/10 border border-white">
             {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold text-center border border-red-100">{error}</div>}
@@ -58,6 +63,7 @@ const LoginPage = () => {
                     </div>
                 </div>
 
+
                 <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-600 ml-1">Password</label>
                     <div className="relative">
@@ -69,9 +75,13 @@ const LoginPage = () => {
                     </div>
                 </div>
 
+
                 <div className="flex justify-end">
-                    <Link to="/forgot-password" class="text-sm font-bold text-emerald-600 hover:text-emerald-800 transition-colors">Password dimenticata?</Link>
+                    <Link to="/forgot-password" className="text-sm font-bold text-emerald-600 hover:text-emerald-800 transition-colors">
+                        Password dimenticata?
+                    </Link>
                 </div>
+
 
                 <button type="submit" disabled={loading} className="btn-bouncy w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 text-lg">
                     {loading ? "Accesso..." : <>Accedi <ArrowRight className="h-5 w-5" /></>}
