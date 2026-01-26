@@ -12,10 +12,10 @@ HF_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Modelli di fallback in ordine di preferenza
 HF_FALLBACK_MODELS = [
-    "meta-llama/llama-3.3-70b-instruct:free",           # Molto verboso e preciso (Primario)
-    "google/gemini-2.0-flash-lite-preview-02-05:free",  # Fallback veloce
-    "google/gemini-2.0-pro-exp-02-05:free",             # Fallback intelligente
-    "mistralai/mistral-small-24b-instruct-2501:free",
+    "xiaomi/mimo-v2-flash:free",                        # Primario
+    "meta-llama/llama-3.3-70b-instruct:free",           # Fallback 1
+    "google/gemini-2.0-flash-lite-preview-02-05:free",  # Fallback 2
+    "google/gemini-2.0-pro-exp-02-05:free",             # Fallback 3
 ]
 
 def _fmt(v, unit: Optional[str] = None):
